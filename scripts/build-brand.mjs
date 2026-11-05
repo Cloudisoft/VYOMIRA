@@ -1,0 +1,14 @@
+// Generates standalone brand SVGs in public/brand from the same geometry as <LogoMark/>.
+import fs from "node:fs";
+const defs = `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F1DCAE"/><stop offset=".55" stop-color="#D8B477"/><stop offset="1" stop-color="#B98D4F"/></linearGradient><linearGradient id="v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A58BFF"/><stop offset="1" stop-color="#7256D8"/></linearGradient><radialGradient id="s"><stop offset="0" stop-color="#FFF6E3"/><stop offset="1" stop-color="#D8B477" stop-opacity="0"/></radialGradient></defs>`;
+const mark = (sw = 1.6) => `<path d="M40.21 11.45A24 24 0 1 1 23.79 11.45" stroke="url(#g)" stroke-width="${sw}" stroke-linecap="round" fill="none"/><path d="M32 50C27.2 42.4 27.4 34.6 32 27.6C36.6 34.6 36.8 42.4 32 50Z" fill="url(#v)" opacity=".9"/><polyline points="17.5,25 23.5,36 32,50 40.5,36 46.5,25" stroke="url(#g)" stroke-width="${sw * 0.7}" stroke-linejoin="round" fill="none" opacity=".85"/>${[[17.5, 25], [23.5, 36], [40.5, 36], [46.5, 25]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.7" fill="#F1DCAE"/>`).join("")}<circle cx="32" cy="50" r="2.3" fill="#FFF3D6"/><circle cx="32" cy="10" r="6" fill="url(#s)" opacity=".7"/><path d="M32 3.2L33.4 8.6L38.8 10L33.4 11.4L32 16.8L30.6 11.4L25.2 10L30.6 8.6Z" fill="#FFF3D6"/>`;
+const font = `font-family="'Cormorant Garamond', Cormorant, Georgia, serif"`;
+const out = "public/brand";
+fs.mkdirSync(out, { recursive: true });
+fs.writeFileSync(`${out}/vyomira-mark.svg`, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${defs}${mark()}</svg>\n`);
+fs.writeFileSync(`${out}/vyomira-horizontal.svg`, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 72">${defs}<g transform="translate(4 4)">${mark()}</g><text x="84" y="44" ${font} font-size="34" letter-spacing="8" fill="url(#g)">VYOMIRA</text><text x="86" y="62" font-family="Manrope, Inter, Arial, sans-serif" font-size="8.5" letter-spacing="3.4" fill="#E9E3F5" opacity=".75">YOUR UNIVERSE. YOUR STORY.</text></svg>\n`);
+fs.writeFileSync(`${out}/vyomira-stacked.svg`, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 200">${defs}<g transform="translate(76 8) scale(1.375)">${mark(1.3)}</g><text x="120" y="150" text-anchor="middle" ${font} font-size="36" letter-spacing="9" fill="url(#g)">VYOMIRA</text><text x="120" y="178" text-anchor="middle" font-family="Manrope, Inter, Arial, sans-serif" font-size="9" letter-spacing="3.6" fill="#E9E3F5" opacity=".75">YOUR UNIVERSE. YOUR STORY.</text></svg>\n`);
+const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${defs}<rect width="64" height="64" rx="14" fill="#080D20"/><g transform="translate(4 4) scale(.875)">${mark(2.4)}</g></svg>\n`;
+fs.writeFileSync(`${out}/vyomira-icon.svg`, icon);
+fs.writeFileSync("src/app/icon.svg", icon);
+console.log("brand assets written");

@@ -1,0 +1,419 @@
+// VYOMIRA data model. Birth details are encrypted at the application layer (AES-256-GCM) before
+// they reach this database; see src/server/crypto.ts. Do not add plaintext birth fields.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BirthTimePrecision {
+  EXACT
+  APPROXIMATE
+  UNKNOWN
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+}
+
+// ---------- Identity (Better Auth tables, renamed) ----------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(USER)
+  locale        String    @default("en")
+  country       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  identities    AuthIdentity[]
+  birthProfiles BirthProfile[]
+  readings      Reading[]
+  conversations Conversation[]
+  reports       Report[]
+  payments      Payment[]
+  subscriptions Subscription[]
+  entitlements  Entitlement[]
+  usage         UsageLedger[]
+  consents      Consent[]
+  auditEvents   AuditEvent[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+/// OAuth / credential identities (Better Auth "account").
+model AuthIdentity {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("auth_identity")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------- Birth data & charts ----------
+
+model GeocodedPlace {
+  id        String   @id @default(cuid())
+  source    String   // "geonames" | provider id
+  sourceId  String
+  name      String
+  admin1    String?
+  country   String
+  latitude  Float
+  longitude Float
+  timeZone  String
+  createdAt DateTime @default(now())
+
+  birthProfiles BirthProfile[]
+
+  @@unique([source, sourceId])
+}
+
+model BirthProfile {
+  id                 String             @id @default(cuid())
+  userId             String
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label              String             @default("Me")
+  isPrimary          Boolean            @default(true)
+  /// AES-256-GCM ciphertext of {fullName, date, time}
+  encryptedDetails   String
+  precision          BirthTimePrecision
+  uncertaintyMinutes Int?
+  fold               Int                @default(0)
+  placeId            String
+  place              GeocodedPlace      @relation(fields: [placeId], references: [id])
+  language           String             @default("en")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  charts ChartSnapshot[]
+
+  @@index([userId])
+}
+
+model ComputationVersion {
+  id          String   @id // e.g. vyomira-astro-1.0.0
+  conventions Json
+  createdAt   DateTime @default(now())
+
+  charts ChartSnapshot[]
+}
+
+model ChartSnapshot {
+  id                   String             @id @default(cuid())
+  birthProfileId       String
+  birthProfile         BirthProfile       @relation(fields: [birthProfileId], references: [id], onDelete: Cascade)
+  computationVersionId String
+  computationVersion   ComputationVersion @relation(fields: [computationVersionId], references: [id])
+  /// SHA-256 of normalized inputs + computation version (no plaintext)
+  inputHash            String
+  /// AES-256-GCM ciphertext of the full ChartResult JSON
+  encryptedPayload     String
+  confidence           Json
+  calculatedAt         DateTime           @default(now())
+
+  placements    PlanetaryPlacement[]
+  dashaPeriods  DashaPeriod[]
+  readings      Reading[]
+  conversations Conversation[]
+  reports       Report[]
+
+  @@unique([birthProfileId, inputHash])
+}
+
+model PlanetaryPlacement {
+  id              String        @id @default(cuid())
+  chartSnapshotId String
+  chart           ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  varga           String        // D1 | D9 | D10
+  planet          String
+  sign            Int
+  degree          Float?
+  longitude       Float?
+  house           Int?
+  nakshatra       String?
+  pada            Int?
+  retrograde      Boolean       @default(false)
+  dignity         String?
+
+  @@index([chartSnapshotId, varga])
+}
+
+model DashaPeriod {
+  id              String        @id @default(cuid())
+  chartSnapshotId String
+  chart           ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  level           Int
+  lord            String
+  parentLord      String?
+  startsAt        DateTime
+  endsAt          DateTime
+
+  @@index([chartSnapshotId, level, startsAt])
+}
+
+// ---------- Interpretation ----------
+
+model InterpretationRule {
+  id        String   @id @default(cuid())
+  key       String
+  version   String
+  category  String
+  title     String
+  condition Json
+  body      String
+  sources   String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([key, version])
+}
+
+model Reading {
+  id               String        @id @default(cuid())
+  userId           String
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chartSnapshotId  String
+  chart            ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  kind             String        // daily | topic | aura
+  topic            String?
+  contextKey       String        // e.g. date for daily readings
+  content          Json
+  evidence         Json
+  generator        String        // "rules" | provider:model
+  validationStatus String        // passed | fallback
+  saved            Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+
+  @@unique([chartSnapshotId, kind, topic, contextKey])
+  @@index([userId, createdAt])
+}
+
+model Conversation {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chartSnapshotId String
+  chart           ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  title           String
+  language        String        @default("en")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  messages Message[]
+
+  @@index([userId, updatedAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           MessageRole
+  content        String
+  evidence       Json?
+  generator      String?
+  validation     String?
+  tokensIn       Int          @default(0)
+  tokensOut      Int          @default(0)
+  costMicros     Int          @default(0)
+  rating         Int?
+  reported       Boolean      @default(false)
+  feedback       String?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+model Report {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chartSnapshotId String
+  chart           ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  type            String
+  /// hash of chart facts + relevant date context; identical hash ⇒ no regeneration/charge
+  factsHash       String
+  status          String        @default("ready")
+  content         Json
+  generator       String
+  createdAt       DateTime      @default(now())
+
+  @@unique([chartSnapshotId, type, factsHash])
+  @@index([userId, createdAt])
+}
+
+// ---------- Billing ----------
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String        // razorpay | stripe | test
+  providerOrderId   String        @unique
+  providerPaymentId String?       @unique
+  planId            String
+  amountMinor       Int
+  currency          String
+  status            PaymentStatus @default(CREATED)
+  refundedMinor     Int           @default(0)
+  idempotencyKey    String        @unique
+  raw               Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  entitlements Entitlement[]
+
+  @@index([userId, createdAt])
+}
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  userId                 String
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                 String
+  provider               String
+  providerSubscriptionId String    @unique
+  status                 String
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean   @default(false)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+}
+
+model Entitlement {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String    // ai_messages | detailed_reports
+  quantity  Int
+  remaining Int
+  source    String    // free | payment | admin
+  paymentId String?
+  payment   Payment?  @relation(fields: [paymentId], references: [id])
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  ledger UsageLedger[]
+
+  @@unique([paymentId, kind])
+  @@index([userId, kind])
+}
+
+model UsageLedger {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind          String       // ai_message | report | llm_tokens
+  delta         Int
+  entitlementId String?
+  entitlement   Entitlement? @relation(fields: [entitlementId], references: [id])
+  model         String?
+  tokensIn      Int          @default(0)
+  tokensOut     Int          @default(0)
+  costMicros    Int          @default(0)
+  refId         String?
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+// ---------- Trust & operations ----------
+
+model Consent {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String    // terms | store_birth_data | ai_processing | marketing
+  version   String
+  granted   Boolean
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  @@index([userId, kind])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  target    String?
+  level     String   @default("info") // info | warn | error
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([level, createdAt])
+}
+
+model AdminConfig {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
