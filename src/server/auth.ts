@@ -34,8 +34,10 @@ export const auth = betterAuth({
       ? { google: { clientId: e.GOOGLE_CLIENT_ID, clientSecret: e.GOOGLE_CLIENT_SECRET, prompt: "select_account" } }
       : {},
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24, cookieCache: { enabled: true, maxAge: 300 } },
-  rateLimit: { enabled: true, window: 60, max: 30, storage: "memory" },
-  advanced: { useSecureCookies: (e.BETTER_AUTH_URL ?? e.NEXT_PUBLIC_APP_URL).startsWith("https://") },
+  rateLimit: { enabled: true, window: 60, max: 60, storage: "memory" },
+  // Behind Railway/Vercel/Cloudflare the client IP arrives in proxy headers; without this every visitor
+  // shared one rate-limit bucket and sign-ins started failing with 429s under light load.
+  advanced: { ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-real-ip", "x-forwarded-for"] }, useSecureCookies: (e.BETTER_AUTH_URL ?? e.NEXT_PUBLIC_APP_URL).startsWith("https://") },
   databaseHooks: {
     user: {
       create: {

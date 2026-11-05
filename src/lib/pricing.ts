@@ -21,8 +21,21 @@ export interface RegionPrice {
   prices: Record<PlanId, number>; // minor units
 }
 
+/** Monthly plans billed by recurring mandate (PayU Standing Instructions / UPI Autopay / card e-mandate). INR only. */
+export interface SubscriptionPlanDef {
+  id: "explorer_monthly" | "cosmic_plus_monthly";
+  name: string;
+  tagline: string;
+  aiMessagesPerMonth: number;
+  detailedReports: boolean;
+  priceMinor: number; // INR paise per month
+  features: string[];
+  highlight?: boolean;
+}
+
 export interface PricingConfig {
   plans: PlanDef[];
+  subscriptions: SubscriptionPlanDef[];
   free: { aiMessages: number; features: string[] };
   regions: Record<string, RegionPrice>; // ISO country → price; "DEFAULT" fallback; "EU" for eurozone
   euCountries: string[];
@@ -51,6 +64,10 @@ export const DEFAULT_PRICING: PricingConfig = {
       highlight: true,
       features: ["25 AURA messages", "All detailed reports + PDF downloads", "Priority AI generation (deeper model)", "Extended interpretation history", "Never expires"],
     },
+  ],
+  subscriptions: [
+    { id: "explorer_monthly", name: "Explorer", tagline: "A steady monthly companion", aiMessagesPerMonth: 50, detailedReports: false, priceMinor: 24900, features: ["50 AURA messages every month", "Monthly guidance from your dasha & transits", "Cancel anytime from Billing"] },
+    { id: "cosmic_plus_monthly", name: "Cosmic Plus Monthly", tagline: "Everything, every month", aiMessagesPerMonth: 200, detailedReports: true, priceMinor: 49900, highlight: true, features: ["200 AURA messages every month", "All detailed reports + Hindi PDFs", "Priority generation (deeper model)", "Cancel anytime from Billing"] },
   ],
   regions: {
     IN: { currency: "INR", symbol: "₹", prices: { starter: 19900, cosmic_plus: 59900 } },

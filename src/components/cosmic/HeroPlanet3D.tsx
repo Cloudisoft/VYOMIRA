@@ -1,6 +1,6 @@
 "use client";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 /**
@@ -16,7 +16,7 @@ float hash(vec3 p){ p = fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z
 float noise(vec3 x){ vec3 i=floor(x); vec3 f=fract(x); f=f*f*(3.0-2.0*f);
   return mix(mix(mix(hash(i+vec3(0,0,0)),hash(i+vec3(1,0,0)),f.x),mix(hash(i+vec3(0,1,0)),hash(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
-float fbm(vec3 p){ float v=0.0; float a=0.5; for(int i=0;i<5;i++){ v+=a*noise(p); p*=2.03; a*=0.5; } return v; }
+float fbm(vec3 p){ float v=0.0; float a=0.5; for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.03; a*=0.5; } return v; }
 void main(){
   vec3 p = vPos*2.2;
   float bands = sin(vPos.y*9.0 + fbm(p + vec3(uTime*0.02,0.0,0.0))*4.0);
@@ -61,11 +61,11 @@ function Planet() {
   return (
     <group ref={group}>
       <mesh ref={mesh}>
-        <sphereGeometry args={[1.55, 96, 96]} />
+        <sphereGeometry args={[1.55, 64, 64]} />
         <shaderMaterial ref={material} vertexShader={planetVert} fragmentShader={planetFrag} uniforms={uniforms} />
       </mesh>
       <mesh scale={1.17}>
-        <sphereGeometry args={[1.55, 64, 64]} />
+        <sphereGeometry args={[1.55, 48, 48]} />
         <shaderMaterial vertexShader={atmoVert} fragmentShader={atmoFrag} blending={THREE.AdditiveBlending} side={THREE.BackSide} transparent depthWrite={false} />
       </mesh>
       {arcs.map((a, i) => (
@@ -96,12 +96,36 @@ function Moon({ position, r, color, speed }: { position: [number, number, number
   );
 }
 
-export default function HeroPlanet3D() {
+export default function HeroPlanet3D({ onFail }: { onFail?: () => void }) {
+  const host = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
+  // Render frames only while the hero is on screen and the tab is visible — saves GPU/battery and avoids
+  // background-tab GPU resets on weaker devices.
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting && !document.hidden), { threshold: 0.01 });
+    io.observe(el);
+    const onVis = () => setVisible(!document.hidden);
+    document.addEventListener("visibilitychange", onVis);
+    return () => { io.disconnect(); document.removeEventListener("visibilitychange", onVis); };
+  }, []);
   return (
-    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0, 6.2], fov: 42 }} gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }} frameloop="always">
+    <div ref={host} className="h-full w-full">
+    <Canvas
+      dpr={[1, 1.5]}
+      camera={{ position: [0, 0, 6.2], fov: 42 }}
+      gl={{ antialias: false, alpha: true, powerPreference: "default", failIfMajorPerformanceCaveat: true }}
+      frameloop={visible ? "always" : "never"}
+      onCreated={({ gl }) => {
+        // If the GPU drops the context (driver reset, memory pressure), fall back to the CSS planet instead of a blank/crashed canvas.
+        gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); onFail?.(); }, { once: true });
+      }}
+    >
       <ambientLight intensity={0.25} />
       <directionalLight position={[-4, 3, 5]} intensity={1.4} color="#FFF1DA" />
       <Planet />
     </Canvas>
+    </div>
   );
 }

@@ -9,6 +9,7 @@ const KEYS = ["pricing", "ai", "flags"] as const;
 const validators = {
   pricing: z.object({
     plans: z.array(z.object({ id: z.enum(["starter", "cosmic_plus"]), name: z.string().min(1), tagline: z.string(), aiMessages: z.number().int().min(1).max(1000), detailedReports: z.boolean(), features: z.array(z.string()), highlight: z.boolean().optional() })),
+    subscriptions: z.array(z.object({ id: z.enum(["explorer_monthly", "cosmic_plus_monthly"]), name: z.string().min(1), tagline: z.string(), aiMessagesPerMonth: z.number().int().min(1).max(5000), detailedReports: z.boolean(), priceMinor: z.number().int().min(100), features: z.array(z.string()), highlight: z.boolean().optional() })).default([]),
     free: z.object({ aiMessages: z.number().int().min(0).max(10), features: z.array(z.string()) }),
     regions: z.record(z.string(), z.object({ currency: z.string().length(3), symbol: z.string().min(1), prices: z.object({ starter: z.number().int().min(100), cosmic_plus: z.number().int().min(100) }) })),
     euCountries: z.array(z.string().length(2)),

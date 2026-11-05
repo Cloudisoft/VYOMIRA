@@ -334,13 +334,45 @@ model Subscription {
   userId                 String
   user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   planId                 String
-  provider               String
+  provider               String    // payu | test
+  /// Provider reference for the registration (PayU SI payment-link invoice number)
   providerSubscriptionId String    @unique
-  status                 String
+  /// Mandate reference used for recurring debits (PayU authpayuid / mihpayid of the registration payment)
+  mandateRef             String?
+  status                 String    // PENDING | ACTIVE | PAST_DUE | CANCELLED | EXPIRED
+  amountMinor            Int       @default(0)
+  currency               String    @default("INR")
+  currentPeriodStart     DateTime?
   currentPeriodEnd       DateTime?
+  nextChargeAt           DateTime?
   cancelAtPeriodEnd      Boolean   @default(false)
+  failedAttempts         Int       @default(0)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
+
+  charges SubscriptionCharge[]
+
+  @@index([status, nextChargeAt])
+  @@index([userId])
+}
+
+/// One row per billing period: pre-debit notice, debit attempt(s) and outcome. Unique per period → idempotent.
+model SubscriptionCharge {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  periodStart    DateTime
+  amountMinor    Int
+  txnid          String       @unique
+  status         String       // NOTIFIED | PENDING | PAID | FAILED
+  preDebitAt     DateTime?
+  attemptedAt    DateTime?
+  attempts       Int          @default(0)
+  raw            Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([subscriptionId, periodStart])
 }
 
 model Entitlement {
