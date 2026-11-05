@@ -189,6 +189,7 @@ export const LEGAL: Record<string, LegalDoc> = {
           <li>Payments are processed by PayU, an RBI-authorised payment aggregator. Your payment is subject to PayU’s terms. We do not store payment credentials.</li>
           <li>A <strong>message pack</strong> is a one-time purchase of the stated number of AURA replies. It is not a subscription and does not renew. Unused messages do not expire while your account exists. Replies that are care/safety responses, identical repeat questions, or generation failures are not charged.</li>
           <li><strong>Cosmic Plus</strong> also unlocks detailed reports for the chart saved on your account at the time of use.</li>
+          <li><strong>Monthly plans</strong> (Explorer, Cosmic Plus Monthly) renew every month until cancelled. With UPI Autopay or a card e-mandate you authorise recurring payments as permitted by the Reserve Bank of India's e-mandate framework; we notify you at least 24 hours (normally 48 hours) before each charge, and you can revoke the mandate at any time from Billing, your UPI app or your bank. Monthly message allowances refresh each period and do not roll over.</li>
           <li>We may change prices for future purchases; changes never affect packs already bought.</li>
         </ul>
 
@@ -233,8 +234,8 @@ export const LEGAL: Record<string, LegalDoc> = {
         <p>Email {mail(C.supportEmail)} from your account email with your order reference (shown in <em>Billing</em>). We acknowledge within 48 hours and decide within 7 days.</p>
         <h2>6. Timelines</h2>
         <p>Approved refunds are initiated within 3 working days to the original payment method through PayU. Banks and card networks typically credit them within 5–7 working days (UPI often sooner). When a refund is processed, unused messages from that pack are removed.</p>
-        <h2>7. Cancellation</h2>
-        <p>Packs are one-time purchases; there is no subscription to cancel and nothing renews automatically. Deleting your account forfeits unused messages unless you request a refund first within the windows above.</p>
+        <h2>7. Cancellation of monthly plans</h2>
+        <p>Cancel anytime from <em>Billing → Cancel plan</em>. No further charges are made after cancellation and you keep access until the end of the period already paid for. If you cancel within 7 days of your first monthly payment and have used no more than 5 messages, we refund that payment in full. Renewal payments are not refunded once the new period has started, except for failed or duplicate charges (§3). One-time packs never renew. Deleting your account forfeits unused messages unless you request a refund first within the windows above.</p>
         <h2>8. Your statutory rights</h2>
         <p>This policy adds to, and does not limit, your rights under the Consumer Protection Act, 2019.</p>
       </>

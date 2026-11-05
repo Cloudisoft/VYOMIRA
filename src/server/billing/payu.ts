@@ -47,24 +47,43 @@ const ist = (d: Date) => new Date(d.getTime() + 5.5 * 3600000).toISOString().rep
 /** Invoice numbers: alphanumeric, ≤ 25 chars. Our payment ids are 25-char cuids. */
 export const payuInvoiceFor = (paymentId: string) => paymentId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 25);
 
-export async function createPayuLink(input: { paymentId: string; amountMinor: number; description: string; name: string; email: string; returnUrl: string }) {
+export async function createPayuLink(input: {
+  paymentId: string;
+  amountMinor: number;
+  description: string;
+  name: string;
+  email: string;
+  returnUrl: string;
+  /** Override the invoice number (default: derived from paymentId). */
+  invoiceNumber?: string;
+  udf1?: string;
+  udf2?: string;
+  /** Link validity in minutes (default 60). */
+  expiresInMinutes?: number;
+  /** Register a monthly Standing Instruction (UPI Autopay / card e-mandate) with this payment. */
+  si?: { billingAmountMinor: number; startDate: Date; endDate: Date };
+}) {
   if (input.amountMinor % 100 !== 0) throw new Error("PayU links are created in whole rupees");
+  const ymd = (d: Date) => new Date(d.getTime() + 5.5 * 3600000).toISOString().slice(0, 10);
   const result = await api<{ paymentLink: string; invoiceNumber: string; totalAmount: number }>("/payment-links", {
     method: "POST",
     body: JSON.stringify({
       subAmount: input.amountMinor / 100,
       currency: "INR",
       description: input.description.slice(0, 255),
-      source: "API",
-      invoiceNumber: payuInvoiceFor(input.paymentId),
-      expiryDate: ist(new Date(Date.now() + 60 * 60000)),
+      source: input.si ? "si_payment_link" : "API",
+      invoiceNumber: input.invoiceNumber ?? payuInvoiceFor(input.paymentId),
+      expiryDate: ist(new Date(Date.now() + (input.expiresInMinutes ?? 60) * 60000)),
       maxPaymentsAllowed: 1,
       isPartialPaymentAllowed: false,
       isAmountFilledByCustomer: false,
       viaEmail: false,
       viaSms: false,
       customer: { name: input.name.slice(0, 60), email: input.email },
-      udf: { udf1: input.paymentId },
+      udf: { udf1: input.udf1 ?? input.paymentId, ...(input.udf2 ? { udf2: input.udf2 } : {}) },
+      ...(input.si
+        ? { siDetails: { billingAmount: input.si.billingAmountMinor / 100, billingCurrency: "INR", billingCycle: "MONTHLY", billingInterval: 1, paymentStartDate: ymd(input.si.startDate), paymentEndDate: ymd(input.si.endDate), billingRule: "MAX", billingLimit: "BEFORE" } }
+        : {}),
       // PayU rejects non-public callback URLs (e.g. http://localhost → HTTP 403); only send real HTTPS origins.
       ...(/^https:\/\/(?!localhost|127\.)/.test(input.returnUrl) ? { successURL: input.returnUrl, failureURL: input.returnUrl } : {}),
     }),

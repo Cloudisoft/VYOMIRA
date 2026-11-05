@@ -1,6 +1,7 @@
 import { db } from "@/server/db";
 import { verifyPayuWebhook } from "@/server/billing/payu";
 import { confirmPayu } from "@/server/billing/payu-confirm";
+import { confirmRenewal, confirmSubscription } from "@/server/billing/subscription-flow";
 import { audit, logError } from "@/server/audit";
 
 /**
@@ -15,6 +16,15 @@ export async function POST(req: Request) {
     return new Response("invalid hash", { status: 400 });
   }
   try {
+    // Subscription payments carry udf1 = "sub:<id>" (and udf2 = renewal invoice).
+    if (fields.udf1?.startsWith("sub:")) {
+      const id = fields.udf1.slice(4);
+      const sub = await db.subscription.findUnique({ where: { id } });
+      if (!sub) return new Response("ok (unknown subscription)");
+      if (sub.status === "PENDING") await confirmSubscription(id);
+      else await confirmRenewal(id);
+      return new Response("ok");
+    }
     const paymentId = fields.udf1;
     const payment = paymentId ? await db.payment.findUnique({ where: { id: paymentId } }) : null;
     if (!payment) return new Response("ok (unknown order)");

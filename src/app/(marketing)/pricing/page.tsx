@@ -10,7 +10,7 @@ export default function PricingPage() {
       <section className="px-6 pt-36 text-center">
         <p className="eyebrow">Pricing</p>
         <h1 className="mx-auto mt-4 max-w-3xl text-5xl sm:text-6xl">Honest prices for an honest practice.</h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-slate">Your Kundli is free forever. Buy a message pack only when you want to talk with AURA — no subscription, no expiry.</p>
+        <p className="mx-auto mt-5 max-w-2xl text-lg text-slate">Your Kundli is free forever. Talk with AURA through a one-time pack that never expires, or a monthly plan you can cancel anytime.</p>
       </section>
       <Pricing compact />
       <Faq />

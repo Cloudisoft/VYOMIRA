@@ -364,7 +364,7 @@ model SubscriptionCharge {
   periodStart    DateTime
   amountMinor    Int
   txnid          String       @unique
-  status         String       // NOTIFIED | PENDING | PAID | FAILED
+  status         String       // NOTIFIED | PENDING | RETRY | PAID | FAILED
   preDebitAt     DateTime?
   attemptedAt    DateTime?
   attempts       Int          @default(0)

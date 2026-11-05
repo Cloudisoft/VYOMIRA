@@ -70,13 +70,13 @@ export async function renewalSucceeded(subscriptionId: string, periodStart: Date
   await audit("subscription.renewed", { target: subscriptionId });
 }
 
-export async function renewalFailed(subscriptionId: string, periodStart: Date, raw?: unknown) {
+export async function renewalFailed(subscriptionId: string, periodStart: Date, raw?: unknown, now = new Date()) {
   const sub = await db.subscription.findUniqueOrThrow({ where: { id: subscriptionId }, include: { user: true } });
   const attempts = sub.failedAttempts + 1;
   const giveUp = attempts >= MAX_ATTEMPTS;
   await db.$transaction([
-    db.subscription.update({ where: { id: subscriptionId }, data: { failedAttempts: attempts, status: giveUp ? "PAST_DUE" : "ACTIVE", nextChargeAt: giveUp ? null : new Date(Date.now() + 24 * 3600 * 1000) } }),
-    db.subscriptionCharge.update({ where: { subscriptionId_periodStart: { subscriptionId, periodStart } }, data: { status: giveUp ? "FAILED" : "PENDING", raw: (raw ?? undefined) as never } }),
+    db.subscription.update({ where: { id: subscriptionId }, data: { failedAttempts: attempts, status: giveUp ? "PAST_DUE" : "ACTIVE", nextChargeAt: giveUp ? null : new Date(now.getTime() + 24 * 3600 * 1000) } }),
+    db.subscriptionCharge.update({ where: { subscriptionId_periodStart: { subscriptionId, periodStart } }, data: { status: giveUp ? "FAILED" : "RETRY", raw: (raw ?? undefined) as never } }),
   ]);
   await audit("subscription.renewal_failed", { userId: sub.userId, target: subscriptionId, level: "warn", meta: { attempts } });
   await sendEmail(sub.user.email, "We couldn't renew your VYOMIRA plan", emailLayout("Renewal payment failed", giveUp ? "<p>We tried several times but couldn't collect this month's payment, so your plan has paused. Your saved chart and readings are safe. You can resubscribe anytime from Billing.</p>" : "<p>This month's automatic payment didn't go through. We'll retry tomorrow — please make sure your UPI Autopay / card mandate is active.</p>"));

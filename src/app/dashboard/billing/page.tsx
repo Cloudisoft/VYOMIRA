@@ -9,10 +9,12 @@ import { PageHeader, Panel } from "@/components/dashboard/ui";
 import { chargeRegion } from "@/server/pricing-region";
 import { Checkout } from "@/components/dashboard/Checkout";
 import { PayuReturn } from "@/components/dashboard/PayuReturn";
+import { SubscriptionPanel } from "@/components/dashboard/SubscriptionPanel";
+import { subscriptionMode } from "@/server/billing/subscription-flow";
 
 export const metadata = { title: "Billing" };
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ plan?: string; status?: string; payu?: string }> }) {
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ plan?: string; status?: string; payu?: string; sub?: string; renew?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const [bal, payments, pricing, country, usage] = await Promise.all([
@@ -22,14 +24,25 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     detectCountry(),
     db.usageLedger.findMany({ where: { userId: user.id, kind: "ai_message" }, orderBy: { createdAt: "desc" }, take: 10 }),
   ]);
+  const currentSub = await db.subscription.findFirst({ where: { userId: user.id, status: { in: ["ACTIVE", "PAST_DUE", "CANCELLED"] }, currentPeriodEnd: { gt: new Date() } }, orderBy: { createdAt: "desc" } });
   const f = features();
   const { region } = await chargeRegion();
   void country;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Billing" title="Messages & packs" intro="One-time packs. No subscriptions, no auto-renewal." />
+      <PageHeader eyebrow="Billing" title="Plans & messages" intro="Choose a monthly plan or a one-time pack. Monthly plans can be cancelled anytime." />
       {sp.payu && /^c[a-z0-9]{20,}$/.test(sp.payu) && <PayuReturn paymentId={sp.payu} />}
       {sp.status === "processing" && <p className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">Payment received by the provider — your pack activates as soon as we receive their confirmation (usually seconds).</p>}
+      {f.payu && (pricing.subscriptions?.length ?? 0) > 0 && (
+        <SubscriptionPanel
+          plans={pricing.subscriptions}
+          mode={subscriptionMode()}
+          returnSub={sp.sub && /^c[a-z0-9]{20,}$/.test(sp.sub) ? sp.sub : undefined}
+          returnRenew={sp.renew && /^c[a-z0-9]{20,}$/.test(sp.renew) ? sp.renew : undefined}
+          current={currentSub ? { id: currentSub.id, planId: currentSub.planId, status: currentSub.status, amountMinor: currentSub.amountMinor, currentPeriodEnd: currentSub.currentPeriodEnd?.toISOString() ?? null, nextChargeAt: currentSub.nextChargeAt?.toISOString() ?? null, cancelAtPeriodEnd: currentSub.cancelAtPeriodEnd } : null}
+        />
+      )}
+      <h2 className="font-display text-3xl">One-time packs</h2>
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel className="lg:col-span-1">
           <p className="text-xs tracking-[0.2em] text-slate uppercase">AURA messages</p>

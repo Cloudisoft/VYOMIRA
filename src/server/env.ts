@@ -22,6 +22,11 @@ const schema = z.object({
   PAYU_CLIENT_SECRET: z.string().optional(),
   PAYU_MERCHANT_ID: z.string().optional(),
   PAYU_ENV: z.enum(["production", "uat"]).default("production"),
+  /** Merchant Key + Salt (PayU Dashboard → Developers → API keys): enable automatic monthly mandate debits. */
+  PAYU_MERCHANT_KEY: z.string().optional(),
+  PAYU_SALT: z.string().optional(),
+  /** Shared secret for the scheduled renewal job (POST /api/cron/subscriptions). */
+  CRON_SECRET: z.string().min(16).optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // AI
