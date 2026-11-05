@@ -1,5 +1,6 @@
 import "server-only";
 import { computeChart, COMPUTATION_VERSION, type ChartInput, type ChartResult } from "@/lib/astro";
+import { computeAdvanced } from "@/lib/astro/advanced";
 import type { BirthInput } from "@/lib/schemas";
 import { db } from "./db";
 import { decryptJson, encryptJson, sha256 } from "./crypto";
@@ -100,10 +101,15 @@ export async function loadChart(userId: string, chartId?: string): Promise<Loade
     profileId: snap.birthProfileId,
     fullName: details.fullName,
     language: snap.birthProfile.language,
-    chart: decryptJson<ChartResult>(snap.encryptedPayload),
+    chart: withAdvanced(decryptJson<ChartResult>(snap.encryptedPayload)),
     birth: { date: details.date, time: details.time },
   };
 }
 
 export const chartFactsHash = (c: ChartResult) =>
   sha256(JSON.stringify({ v: c.computation.id, p: c.placements.map((p) => [p.planet, p.sign, p.house, p.nakshatra]), l: c.lagna?.sign ?? null, d: c.dasha.balanceAtBirth.totalYears.toFixed(4) }));
+
+/** Charts saved before the advanced layer existed get it computed on read (same inputs, deterministic). */
+function withAdvanced(c: ChartResult): ChartResult {
+  return c.advanced ? c : { ...c, advanced: computeAdvanced(c) };
+}

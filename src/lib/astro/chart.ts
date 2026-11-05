@@ -10,17 +10,19 @@ import { LAHIRI } from "./ayanamsa";
 import { formatOffset, localToUtc, offsetAt, type LocalDateTime, type ResolvedInstant } from "./timezone";
 import { dashamsaSign, navamsaSign } from "./varga";
 import { detectYogas, type YogaResult } from "./yogas";
+import { computeAdvanced, type AdvancedChart } from "./advanced";
 
 /** Bump whenever any convention or algorithm that changes numeric output changes. */
 export const COMPUTATION_VERSION = {
-  id: "vyomira-astro-1.0.0",
+  id: "vyomira-astro-1.1.0",
   zodiac: "sidereal",
   ayanamsa: LAHIRI.id,
   ayanamsaDefinition: "Lahiri/Chitrapaksha: 23.245524743° at JD 2435553.5 TT, IAU 1976 precession, mean (no nutation)",
   houseSystem: "whole-sign",
   nodes: "mean",
   dashaYear: `${DASHA_YEAR_DAYS} days`,
-  vargas: ["D1", "D9", "D10"],
+  vargas: ["D1", "D2", "D3", "D4", "D7", "D9", "D10", "D12", "D16", "D20", "D24", "D27", "D30", "D40", "D45", "D60"],
+  extras: "Ashtakavarga (BPHS), Shadbala (BPHS, documented conventions), true node (osculating), Western tropical/Placidus",
   aspects: "Parashari graha drishti (sign-based); Rahu/Ketu aspects not applied",
   ephemeris: `${EPHEMERIS.id}@${EPHEMERIS.version}`,
 } as const;
@@ -115,6 +117,7 @@ export interface ChartResult {
   };
   yogas: YogaResult[];
   confidence: Confidence;
+  advanced?: AdvancedChart;
 }
 
 const COMBUST_ORB: Partial<Record<Planet, [number, number]>> = {
@@ -358,6 +361,7 @@ export function computeChart(input: ChartInput, now: Date = new Date()): ChartRe
     },
   };
   result.yogas = detectYogas(result);
+  result.advanced = computeAdvanced(result);
   return result;
 }
 

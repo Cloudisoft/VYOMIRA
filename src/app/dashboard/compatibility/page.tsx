@@ -6,7 +6,7 @@ export const metadata = { title: "Compatibility" };
 export default function CompatibilityPage() {
   return (
     <div>
-      <PageHeader eyebrow="Partial Ashtakoota" title="Compatibility" intro="Compare your chart with a partner's using three kootas with unambiguous classical tables — Nadi, Bhakoot and Gana (21 of 36 points). The full Guna Milan will be released only after its remaining tables are validated. Partner details are used for this calculation only and are not stored." />
+      <PageHeader eyebrow="Ashtakoota Guna Milan" title="Compatibility" intro="The traditional 36-point comparison of two Moon charts across eight kootas, with every table sourced and versioned. Partner details are used for this calculation only and are never stored." />
       <CompatibilityClient />
     </div>
   );

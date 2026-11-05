@@ -76,3 +76,14 @@ describe("output safety & pricing", () => {
     expect(DEFAULT_PRICING.plans.map((p) => p.aiMessages)).toEqual([10, 25]);
   });
 });
+
+describe("validator — Hindi", () => {
+  it("accepts supported Hindi placements and rejects invented ones", () => {
+    // chart: Moon in Taurus (house 9), Mars in Aries (house 8)
+    expect(validateText("चंद्रमा वृषभ राशि में है।", ev)).toEqual([]);
+    expect(validateText("मंगल मेष राशि में अष्टम भाव में है।", ev)).toEqual([]);
+    expect(validateText("चंद्रमा सिंह राशि में है।", ev).map((x) => x.kind)).toContain("placement");
+    expect(validateText("मंगल दशम भाव में है।", ev).map((x) => x.kind)).toContain("house");
+    expect(validateText("नीलम रत्न पहनें।", ev).map((x) => x.kind)).toContain("guardrail");
+  });
+});

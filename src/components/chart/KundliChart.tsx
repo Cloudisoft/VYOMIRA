@@ -4,22 +4,37 @@ import { PLANET_INFO, SIGNS, type Planet } from "@/lib/astro/constants";
 import { dms } from "@/lib/astro/math";
 import type { ChartResult } from "@/lib/astro/chart";
 import { cn } from "@/lib/utils";
+import { VARGA_RULES } from "@/lib/astro/varga";
+
+const VARGA_NAMES: Record<string, string> = Object.fromEntries(Object.entries(VARGA_RULES).map(([k, v]) => [k, v.name]));
 
 export type ChartStyle = "north" | "south";
-export type Varga = "D1" | "D9" | "D10";
+export type Varga = string; // "D1" … "D60"
+export type NodeMode = "mean" | "true";
 
 interface Body { planet: Planet; sign: number; label: string; retro: boolean; detail: string }
 
-function bodiesFor(chart: ChartResult, varga: Varga): { bodies: Body[]; lagna: number | null; ref: "lagna" | "moon" } {
-  const v = varga === "D1" ? null : chart.vargas[varga];
-  const bodies = chart.placements.map((p) => ({
+export function vargaTable(chart: ChartResult, varga: Varga): Record<string, number | null> | null {
+  if (varga === "D1") return null;
+  return (chart.advanced?.vargas as Record<string, Record<string, number | null>> | undefined)?.[varga] ?? (chart.vargas as Record<string, Record<string, number | null>>)[varga] ?? null;
+}
+
+function bodiesFor(chart: ChartResult, varga: Varga, nodeMode: NodeMode = "mean"): { bodies: Body[]; lagna: number | null; ref: "lagna" | "moon" } {
+  const v = vargaTable(chart, varga);
+  const tn = chart.advanced?.trueNode;
+  const bodies = chart.placements.map((p0) => {
+    const useTrue = nodeMode === "true" && tn && (p0.planet === "Rahu" || p0.planet === "Ketu");
+    const tl = useTrue ? (p0.planet === "Rahu" ? tn!.rahu : tn!.ketu) : p0.longitude;
+    const p = useTrue ? { ...p0, longitude: tl, sign: Math.floor(tl / 30), signName: SIGNS[Math.floor(tl / 30)].name, degree: tl % 30, nakshatra: p0.planet === "Rahu" ? tn!.rahuNakshatra : tn!.ketuNakshatra } : p0;
+    return {
     planet: p.planet,
     sign: v ? (v[p.planet] as number) : p.sign,
     label: PLANET_INFO[p.planet].abbr,
     retro: p.retrograde && p.planet !== "Rahu" && p.planet !== "Ketu",
-    detail: `${p.planet}: ${p.signName} ${dms(p.degree)} · ${p.nakshatra} pada ${p.pada}${p.retrograde ? " · retrograde" : ""}${p.combust ? " · combust" : ""} · ${p.dignity}${varga !== "D1" && v ? ` · ${varga} sign ${SIGNS[v[p.planet] as number].name}` : ""}`,
-  }));
-  const lagna = varga === "D1" ? chart.lagna?.sign ?? null : (chart.vargas[varga].Lagna as number | null);
+    detail: `${p.planet}${useTrue ? " (true node)" : ""}: ${p.signName} ${dms(p.degree)} · ${p.nakshatra}${useTrue ? "" : ` pada ${p.pada}`}${p.retrograde ? " · retrograde" : ""}${p.combust ? " · combust" : ""} · ${p.dignity}${varga !== "D1" && v ? ` · ${varga} sign ${SIGNS[v[p.planet] as number].name}` : ""}`,
+  };
+  });
+  const lagna = varga === "D1" ? chart.lagna?.sign ?? null : ((v?.Lagna as number | null | undefined) ?? null);
   return { bodies, lagna: lagna ?? null, ref: lagna === null ? "moon" : "lagna" };
 }
 
@@ -39,8 +54,8 @@ const NORTH_HOUSES: { poly: string; c: [number, number]; n: [number, number] }[]
 ];
 const SOUTH_CELLS: [number, number][] = [[1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3], [2, 3], [1, 3], [0, 3], [0, 2], [0, 1], [0, 0]]; // index = sign (Aries=0)
 
-export function KundliChart({ chart, varga = "D1", style = "north", selected, onSelect, className }: { chart: ChartResult; varga?: Varga; style?: ChartStyle; selected?: Planet | null; onSelect?: (p: Planet | null) => void; className?: string }) {
-  const { bodies, lagna, ref } = bodiesFor(chart, varga);
+export function KundliChart({ chart, varga = "D1", style = "north", selected, onSelect, className, nodeMode = "mean" }: { chart: ChartResult; varga?: Varga; style?: ChartStyle; selected?: Planet | null; onSelect?: (p: Planet | null) => void; className?: string; nodeMode?: NodeMode }) {
+  const { bodies, lagna, ref } = bodiesFor(chart, varga, nodeMode);
   const base = lagna ?? chart.moonSign.sign; // when Lagna unknown, Chandra Lagna
   const [hover, setHover] = useState<Body | null>(null);
   const info = hover ?? bodies.find((b) => b.planet === selected) ?? null;
@@ -111,7 +126,7 @@ export function KundliChart({ chart, varga = "D1", style = "north", selected, on
               </g>
             ))}
             <rect x="100" y="100" width="200" height="200" fill="rgba(8,13,32,.6)" stroke="url(#kgrid)" />
-            <text x="200" y="196" textAnchor="middle" fontSize="20" fill="#E9E3F5" fontFamily="var(--font-display)">{varga === "D1" ? "Rashi" : varga === "D9" ? "Navamsa" : "Dashamsa"}</text>
+            <text x="200" y="196" textAnchor="middle" fontSize="20" fill="#E9E3F5" fontFamily="var(--font-display)">{VARGA_NAMES[varga] ?? varga}</text>
             <text x="200" y="216" textAnchor="middle" fontSize="9" letterSpacing="3" fill="#9BA3BC">{varga} · LAHIRI</text>
             {SOUTH_CELLS.map(([cx, cy], sign) => {
               const list = bodies.filter((b) => b.sign === sign);

@@ -6,11 +6,13 @@ import { detectCountry } from "@/server/country";
 import { features } from "@/server/env";
 import { formatMoney, regionFor } from "@/lib/pricing";
 import { PageHeader, Panel } from "@/components/dashboard/ui";
+import { chargeRegion } from "@/server/pricing-region";
 import { Checkout } from "@/components/dashboard/Checkout";
+import { PayuReturn } from "@/components/dashboard/PayuReturn";
 
 export const metadata = { title: "Billing" };
 
-export default async function BillingPage({ searchParams }: { searchParams: Promise<{ plan?: string; status?: string }> }) {
+export default async function BillingPage({ searchParams }: { searchParams: Promise<{ plan?: string; status?: string; payu?: string }> }) {
   const user = await requireUser();
   const sp = await searchParams;
   const [bal, payments, pricing, country, usage] = await Promise.all([
@@ -20,11 +22,13 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     detectCountry(),
     db.usageLedger.findMany({ where: { userId: user.id, kind: "ai_message" }, orderBy: { createdAt: "desc" }, take: 10 }),
   ]);
-  const { region } = regionFor(country, pricing);
   const f = features();
+  const { region } = await chargeRegion();
+  void country;
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Billing" title="Messages & packs" intro="One-time packs. No subscriptions, no auto-renewal." />
+      {sp.payu && /^c[a-z0-9]{20,}$/.test(sp.payu) && <PayuReturn paymentId={sp.payu} />}
       {sp.status === "processing" && <p className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">Payment received by the provider — your pack activates as soon as we receive their confirmation (usually seconds).</p>}
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel className="lg:col-span-1">
@@ -42,7 +46,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           ))}
         </div>
       </div>
-      {!f.razorpay && f.testPayments && <p className="rounded-xl border border-amethyst/40 bg-violet/10 px-4 py-3 text-sm text-moon/90"><strong>Test mode.</strong> Razorpay keys aren't configured, so checkout opens a clearly-labelled simulator. No money moves and no real payment is recorded.</p>}
+      {!f.payu && !f.razorpay && f.testPayments && <p className="rounded-xl border border-amethyst/40 bg-violet/10 px-4 py-3 text-sm text-moon/90"><strong>Test mode.</strong> No payment provider (PayU) is configured, so checkout opens a clearly-labelled simulator. No money moves and no real payment is recorded.</p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Payment history">
           {payments.length ? (

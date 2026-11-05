@@ -6,7 +6,7 @@ export default function Contact() {
       <ul>
         <li>Support & billing: <a href="mailto:support@vyomira.app">support@vyomira.app</a></li>
         <li>Privacy & data requests: <a href="mailto:privacy@vyomira.app">privacy@vyomira.app</a></li>
-        <li>Grievance Officer (India): to be appointed before launch — see Privacy Notice.</li>
+        <li>Grievance Officer: see <a href="/legal/grievance">Grievance Redressal</a></li>
       </ul>
       <p>If you are in distress, please contact Tele-MANAS on 14416 (India, free, 24×7), call 112 in an emergency, or find a helpline in your country at findahelpline.com.</p>
     </ContentPage>

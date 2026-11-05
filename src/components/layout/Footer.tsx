@@ -4,7 +4,7 @@ import { Logo } from "@/components/brand/Logo";
 const COLS = [
   { title: "Product", links: [["Birth Chart", "/onboarding"], ["AURA", "/#aura"], ["Reports", "/#readings"], ["Pricing", "/pricing"]] },
   { title: "Understand", links: [["Learn Jyotish", "/learn"], ["Methodology", "/methodology"], ["FAQ", "/#faq"]] },
-  { title: "Trust", links: [["Privacy Notice", "/legal/privacy"], ["Terms of Service", "/legal/terms"], ["Refund Policy", "/legal/refunds"], ["Astrology Disclaimer", "/legal/disclaimer"], ["Attributions", "/legal/attributions"]] },
+  { title: "Trust", links: [["Privacy Notice", "/legal/privacy"], ["Terms of Service", "/legal/terms"], ["Refund Policy", "/legal/refunds"], ["Astrology Disclaimer", "/legal/disclaimer"], ["Cookie Notice", "/legal/cookies"], ["Grievance Redressal", "/legal/grievance"], ["गोपनीयता सूचना", "/legal/privacy-hi"], ["Attributions", "/legal/attributions"]] },
   { title: "Support", links: [["Contact", "/contact"], ["support@vyomira.app", "mailto:support@vyomira.app"]] },
 ];
 
@@ -31,7 +31,7 @@ export function Footer() {
       <div className="border-t hairline">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-6 text-xs text-slate/70 sm:flex-row sm:justify-between">
           <p>© {new Date().getFullYear()} VYOMIRA. Astrology is offered for reflection and entertainment; it is not a substitute for professional advice.</p>
-          <p>Place data © GeoNames (CC BY 4.0)</p>
+          <p>Payments by PayU · Place data © GeoNames (CC BY 4.0)</p>
         </div>
       </div>
     </footer>

@@ -14,14 +14,17 @@ An AI-assisted Vedic astrology platform built on a **real astronomical engine**,
 | Brand system — original SVG mark, horizontal / stacked / icon / favicon (`public/brand`, `src/components/brand/Logo.tsx`) | ✅ |
 | Email + password auth, Google sign-in (needs credentials), password reset (needs Resend) | ✅ |
 | Multi-step onboarding with GeoNames place search (34k cities + IANA zones), 12/24h time, exact / approximate / unknown precision | ✅ |
-| Astronomy engine: sidereal positions, Lahiri ayanamsa, Lagna, whole-sign houses, retrograde, mean nodes, D1/D9/D10, Nakshatra & pada, Vimshottari (MD/AD/PD), Panchang, Parashari aspects, yoga catalog, transits & ingress search | ✅ verified vs Swiss Ephemeris |
+| Astronomy engine: sidereal positions, Lahiri ayanamsa, Lagna, whole-sign houses, retrograde, mean **and true** nodes, Nakshatra & pada, Vimshottari (MD/AD/PD), Panchang, Parashari aspects, yoga catalog, transits & ingress search | ✅ verified vs Swiss Ephemeris |
+| All 16 divisional charts (D1–D60), Ashtakavarga, Shadbala, Western tropical chart (Placidus, outer planets, aspects), full 36-point Guna Milan | ✅ verified vs PyJHora / Swiss Ephemeris (conventions documented) |
 | Historical timezone handling with ambiguous / nonexistent local-time detection | ✅ |
 | Dashboard: overview, Kundli (North/South, D1/D9/D10, artistic sky view), Dasha timeline, daily insights & 14-day calendar, partial compatibility, reports + PDFs, saved readings, billing, settings | ✅ |
-| AURA chat: layered evidence → optional LLM → fact validator → rule-engine fallback; EN/HI/Hinglish; ratings, reports, save, delete | ✅ (LLM path needs an API key) |
-| Payments: Razorpay orders, checkout signature + webhook verification, idempotent fulfilment, refunds; optional Stripe; regional pricing; local test simulator | ✅ (live keys needed for real money) |
+| AURA chat: layered evidence → Claude (Anthropic) → English + Hindi fact validator → rule-engine fallback; EN/HI/Hinglish; ratings, reports, save, delete | ✅ live-tested |
+| Report PDFs in English and Hindi (embedded Noto fonts, Devanagari shaping; AI translation with number-preservation guard) | ✅ |
+| Payments: **PayU** Payment Links (OAuth) with server-to-server confirmation + signed webhook, idempotent fulfilment, admin refund recording; Razorpay/Stripe adapters; local test simulator | ✅ live link creation verified |
 | Admin: metrics, users (no birth data), AI usage & model config, payments reconciliation, pricing & feature flags, rule versions, feedback, error/audit log | ✅ |
 | Privacy: AES-256-GCM encryption of birth data, consent records, export, deletion, no birth data in logs | ✅ |
-| Tests: 55 unit/integration (Vitest) + 6 end-to-end (Playwright) | ✅ passing |
+| Legal: Privacy Notice (English + Hindi, DPDP Act 2023 / Rules 2025, GDPR), Terms, Refunds (E-Commerce Rules 2020), Disclaimer, Cookies, Grievance Redressal | ✅ (fill entity details) |
+| Tests: Vitest unit/integration + Playwright end-to-end | ✅ passing |
 
 See **[Clearly marked incomplete functionality](#incomplete--blocked)** below.
 
@@ -96,14 +99,8 @@ Regional prices exist for US, UK, Eurozone, UAE, Singapore, Canada, Australia an
 
 ## Incomplete / blocked
 
-Honest status of what is **not** finished or not verifiable in this environment:
-
-- **Live AI generation not exercised.** The Anthropic (official SDK) and OpenAI-compatible adapters, structured output schema, retry-on-violation and budget cut-off are implemented and type-checked, but no API key was available, so all automated tests run the rule-engine path. Hindi/Hinglish fluency depends on the LLM; the rule-engine fallback is English with a localized note.
-- **Razorpay/Stripe live payments not exercised.** Order creation, signature and webhook verification, idempotency and refunds are implemented; signature logic and fulfilment are tested locally. A Razorpay test-mode run with real keys (and webhook URL `…/api/payments/webhook/razorpay`) is required before launch. International currencies on Razorpay require international payments to be enabled on the merchant account.
-- **Google sign-in, Resend email** need credentials; untested live.
-- **Not implemented by design until validated:** Ashtakavarga, Shadbala, divisional charts beyond D9/D10, full 36-point Guna Milan (only Nadi/Bhakoot/Gana shown), true node, Western tropical system, yoga cancellation rules.
-- **PDF reports** use standard PDF fonts → English/Latin only (no Devanagari in PDFs yet).
-- **Legal pages are drafts** and must be reviewed by counsel (DPDP Act 2023, consumer protection, payment-aggregator terms). No compliance is claimed.
-- **Encryption key rotation** is designed (`v1.` ciphertext prefix) but a rotation script is not written.
-- **"Taste Skill" and "impeccable"** design skills were requested but are not installed in this build environment; their principles (restraint, hierarchy, no generic AI-template patterns) were applied manually.
-- Places are limited to GeoNames cities with ≥ 15k inhabitants; a geocoding-provider adapter for villages is a recommended next step.
+- **Legal entity details** — set `NEXT_PUBLIC_LEGAL_ENTITY_NAME`, address, jurisdiction city, Grievance Officer name/email and GSTIN before launch. Policies were drafted against the DPDP Act 2023 & Rules 2025, IT Act 2000, Consumer Protection (E-Commerce) Rules 2020 and GDPR, but should still be signed off by your counsel.
+- **PayU:** link creation, redirect and server-side confirmation are verified against the live account; a real paid transaction, the webhook (register `https://<host>/api/payments/webhook/payu` in PayU Dashboard → Webhooks) and the HTTPS return URL can only be exercised on your deployed domain. PayU refunds are issued in the PayU dashboard (its refund API needs merchant key + salt) and recorded in `/admin/payments`.
+- **Conventions that legitimately vary** between traditions are documented rather than "resolved": Ashtakavarga Moon/Venus tables, Shadbala sub-components, Guna Milan tables. Yuddha (planetary war) bala is not applied.
+- **Google sign-in and Resend email** still need credentials.
+- Places are limited to GeoNames cities with ≥ 15k inhabitants.

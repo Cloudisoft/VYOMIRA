@@ -5,6 +5,7 @@ import { KundliExplorer } from "@/components/chart/KundliExplorer";
 import { dms } from "@/lib/astro/math";
 import { SIGNS } from "@/lib/astro/constants";
 import { ORDINAL } from "@/lib/interpret/catalog";
+import { AshtakavargaPanel, ShadbalaPanel } from "@/components/chart/StrengthPanels";
 
 export const metadata = { title: "My Kundli" };
 
@@ -17,6 +18,12 @@ export default async function KundliPage() {
     <div className="space-y-6">
       <PageHeader eyebrow="Janam Kundli" title="My Kundli" intro={`${c.input.local} · ${c.input.placeLabel} · ${c.input.timeZone} (${c.input.utcOffset})`} />
       <KundliExplorer chart={c} />
+      {c.advanced && (
+        <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+          <Panel title="Ashtakavarga">{c.advanced.ashtakavarga && c.lagna ? <AshtakavargaPanel av={c.advanced.ashtakavarga} lagnaSign={c.lagna.sign} /> : <p className="text-sm text-slate">Needs a reliable birth time (Lagna).</p>}</Panel>
+          <Panel title="Shadbala">{c.advanced.shadbala ? <ShadbalaPanel sb={c.advanced.shadbala} /> : <p className="text-sm text-slate">Shown only for exact birth times — it depends on the precise time of day.</p>}</Panel>
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title="Yogas found">
           {c.yogas.length ? (

@@ -16,7 +16,7 @@ export default async function ReportView({ params }: { params: Promise<{ id: str
   const r = row.content as unknown as ReportContent;
   return (
     <article className="space-y-6">
-      <PageHeader eyebrow={`Report · ${fmt(r.generatedAt)}`} title={r.title} intro={`Prepared for ${r.preparedFor}`} action={<a href={`/api/reports/${row.id}/pdf`} className="btn-primary"><Download className="h-4 w-4" /> Download PDF</a>} />
+      <PageHeader eyebrow={`Report · ${fmt(r.generatedAt)}`} title={r.title} intro={`Prepared for ${r.preparedFor}`} action={<div className="flex flex-wrap gap-2"><a href={`/api/reports/${row.id}/pdf`} className="btn-primary"><Download className="h-4 w-4" /> PDF (English)</a><a href={`/api/reports/${row.id}/pdf?lang=hi`} className="btn-ghost"><Download className="h-4 w-4" /> PDF (हिन्दी)</a></div>} />
       <dl className="grid gap-px overflow-hidden rounded-[1.5rem] border hairline bg-[rgba(165,139,255,.14)] sm:grid-cols-2 lg:grid-cols-4">
         {r.chartSummary.map((s) => <div key={s.label} className="bg-navy p-4"><dt className="text-xs text-slate">{s.label}</dt><dd className="mt-1 text-moon">{s.value}</dd></div>)}
       </dl>

@@ -70,9 +70,55 @@ export function validateText(text: string, ev: EvidencePackage): Violation[] {
   for (const m of text.matchAll(/\b(19\d{2}|20\d{2}|21\d{2})\b/g)) {
     if (!ev.allowed.years.includes(Number(m[1]))) v.push({ kind: "year", text: m[1] });
   }
+  v.push(...validateHindi(text, ev));
   for (const [re, label] of GUARDRAIL_PATTERNS) if (re.test(text)) v.push({ kind: "guardrail", text: label });
+  for (const [re, label] of HI_GUARDRAILS) if (re.test(text)) v.push({ kind: "guardrail", text: label });
   return v;
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 export { SIGN_NAMES };
+
+// ---------- Hindi (Devanagari) claims ----------
+const HI_PLANETS: Record<string, string> = { "सूर्य": "Sun", "चंद्रमा": "Moon", "चंद्र": "Moon", "चन्द्र": "Moon", "मंगल": "Mars", "बुध": "Mercury", "बृहस्पति": "Jupiter", "गुरु": "Jupiter", "शुक्र": "Venus", "शनि": "Saturn", "राहु": "Rahu", "केतु": "Ketu" };
+const HI_SIGNS: Record<string, string> = { "मेष": "Aries", "वृषभ": "Taurus", "वृष": "Taurus", "मिथुन": "Gemini", "कर्क": "Cancer", "सिंह": "Leo", "कन्या": "Virgo", "तुला": "Libra", "वृश्चिक": "Scorpio", "धनु": "Sagittarius", "मकर": "Capricorn", "कुंभ": "Aquarius", "कुम्भ": "Aquarius", "मीन": "Pisces" };
+const HI_ORD: Record<string, number> = { "प्रथम": 1, "पहले": 1, "पहला": 1, "द्वितीय": 2, "दूसरे": 2, "तृतीय": 3, "तीसरे": 3, "चतुर्थ": 4, "चौथे": 4, "पंचम": 5, "पांचवें": 5, "पाँचवें": 5, "षष्ठ": 6, "छठे": 6, "सप्तम": 7, "सातवें": 7, "अष्टम": 8, "आठवें": 8, "नवम": 9, "नौवें": 9, "दशम": 10, "दसवें": 10, "एकादश": 11, "ग्यारहवें": 11, "द्वादश": 12, "बारहवें": 12 };
+const alt = (o: Record<string, unknown>) => Object.keys(o).sort((a, b) => b.length - a.length).join("|");
+const HI_GUARDRAILS: [RegExp, string][] = [
+  [/(निश्चित रूप से होगा|गारंटी|100\s?%|पक्का होगा)/, "certainty claim"],
+  [/(मृत्यु होगी|आपकी मृत्यु|मौत होगी)/, "death prediction"],
+  [/(रत्न|नीलम|पुखराज|माणिक|पन्ना).{0,20}(पहनें|पहनिए|खरीदें)/, "remedy/gem sales"],
+];
+
+function validateHindi(text: string, ev: EvidencePackage): Violation[] {
+  if (!/[\u0900-\u097F]/.test(text)) return [];
+  const v: Violation[] = [];
+  const ps = new Set(ev.allowed.planetSign), vps = new Set(ev.allowed.vargaPlanetSign), ph = new Set(ev.allowed.planetHouse);
+  // Split into clauses so a planet is only paired with a sign/house in the same clause.
+  for (const clause of text.split(/[।\n.;!?]|,\s*(?:जो|और|जबकि)/)) {
+    const planets = [...clause.matchAll(new RegExp(`(${alt(HI_PLANETS)})`, "g"))];
+    if (!planets.length) continue;
+    const isVarga = /नवांश|नवमांश|दशमांश|D9|D10/.test(clause);
+    for (const sm of clause.matchAll(new RegExp(`(${alt(HI_SIGNS)})\\s*(?:राशि|में)`, "g"))) {
+      const sign = HI_SIGNS[sm[1]];
+      // nearest preceding planet in the clause
+      const before = planets.filter((p) => (p.index ?? 0) < (sm.index ?? 0));
+      if (!before.length) continue;
+      const planet = HI_PLANETS[before[before.length - 1][1]];
+      const ok = isVarga ? vps.has(`${planet}|${sign}`) : ps.has(`${planet}|${sign}`);
+      if (!ok) v.push({ kind: "placement", text: `${before[before.length - 1][1]} … ${sm[1]}` });
+    }
+    for (const hm of clause.matchAll(new RegExp(`(${alt(HI_ORD)}|(\\d{1,2})(?:वें|वां|वे))\\s*भाव`, "g"))) {
+      const house = hm[2] ? Number(hm[2]) : HI_ORD[hm[1]];
+      const before = planets.filter((p) => (p.index ?? 0) < (hm.index ?? 0));
+      if (!before.length) continue;
+      const planet = HI_PLANETS[before[before.length - 1][1]];
+      if (!ph.has(`${planet}|${house}`)) v.push({ kind: "house", text: `${before[before.length - 1][1]} … ${hm[0]}` });
+    }
+    for (const dm of clause.matchAll(new RegExp(`(${alt(HI_PLANETS)})\\s*(?:की)?\\s*महादशा`, "g"))) {
+      const planet = HI_PLANETS[dm[1]];
+      if (/वर्तमान|चल रही|अभी/.test(clause) && ev.core.currentMahadasha && planet !== ev.core.currentMahadasha.lord) v.push({ kind: "dasha", text: dm[0] });
+    }
+  }
+  return v;
+}

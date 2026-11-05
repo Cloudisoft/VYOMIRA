@@ -161,7 +161,7 @@ export function Wizard() {
                     <p className="mb-2 text-sm text-slate">Astrology system</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-2xl border border-gold/60 bg-gold/10 px-4 py-3 text-sm">Vedic (sidereal · Lahiri)<span className="block text-xs text-slate">Default</span></div>
-                      <div aria-disabled className="rounded-2xl border hairline px-4 py-3 text-sm text-slate/60">Western (tropical)<span className="block text-xs">Coming later</span></div>
+                      <div className="rounded-2xl border hairline px-4 py-3 text-sm text-slate">Western (tropical · Placidus)<span className="block text-xs">Included — switch views in your Kundli</span></div>
                     </div>
                   </div>
                   <p className="rounded-2xl border hairline bg-surface/40 p-4 text-xs leading-relaxed text-slate">Calculating a preview stores nothing. If you later save your chart, we'll ask for explicit consent to store your birth details (encrypted) and, separately, whether AURA may send chart-derived context to an AI provider.</p>

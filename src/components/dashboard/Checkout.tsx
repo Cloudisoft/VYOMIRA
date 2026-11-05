@@ -19,7 +19,7 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
-interface Order { provider: "razorpay" | "test" | "stripe"; paymentId: string; orderId: string; checkoutUrl?: string; amount: number; currency: string; keyId: string | null; planName: string; email: string; name: string }
+interface Order { provider: "razorpay" | "test" | "stripe" | "payu"; paymentId: string; orderId: string; checkoutUrl?: string; amount: number; currency: string; keyId: string | null; planName: string; email: string; name: string }
 
 export function Checkout({ planId, label, highlight }: { planId: string; label: string; highlight?: boolean }) {
   const router = useRouter();
@@ -34,7 +34,7 @@ export function Checkout({ planId, label, highlight }: { planId: string; label: 
       const o = (await r.json()) as Order & { error?: string };
       if (!r.ok) throw new Error(o.error ?? "Could not start checkout");
       if (o.provider === "test") { setTestOrder(o); return; }
-      if (o.provider === "stripe" && o.checkoutUrl) { window.location.href = o.checkoutUrl; return; }
+      if ((o.provider === "stripe" || o.provider === "payu") && o.checkoutUrl) { window.location.href = o.checkoutUrl; return; }
       if (!(await loadRazorpay()) || !window.Razorpay) throw new Error("Could not load Razorpay checkout. Check your connection.");
       const rz = new window.Razorpay({
         key: o.keyId, order_id: o.orderId, amount: o.amount, currency: o.currency, name: "VYOMIRA", description: o.planName,
@@ -70,7 +70,7 @@ export function Checkout({ planId, label, highlight }: { planId: string; label: 
           <div className="glass w-full max-w-md rounded-[1.5rem] p-7">
             <p className="inline-flex items-center gap-2 rounded-full bg-violet/20 px-3 py-1 text-xs text-amethyst"><FlaskConical className="h-3.5 w-3.5" /> LOCAL TEST MODE</p>
             <h2 id="test-pay-title" className="mt-4 font-display text-3xl">Payment simulator</h2>
-            <p className="mt-2 text-sm text-slate">{testOrder.planName} · {(testOrder.amount / 100).toFixed(2)} {testOrder.currency}. Razorpay isn't configured, so this simulates the provider's callback. <strong className="text-moon">No money moves.</strong></p>
+            <p className="mt-2 text-sm text-slate">{testOrder.planName} · {(testOrder.amount / 100).toFixed(2)} {testOrder.currency}. No payment provider is configured, so this simulates the provider's callback. <strong className="text-moon">No money moves.</strong></p>
             <p className="mt-2 font-mono text-[11px] text-slate/70">{testOrder.orderId}</p>
             <div className="mt-6 flex gap-3">
               <button className="btn-primary flex-1" onClick={() => simulate("success")} disabled={busy}>Simulate success</button>

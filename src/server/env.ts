@@ -18,6 +18,10 @@ const schema = z.object({
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+  PAYU_CLIENT_ID: z.string().optional(),
+  PAYU_CLIENT_SECRET: z.string().optional(),
+  PAYU_MERCHANT_ID: z.string().optional(),
+  PAYU_ENV: z.enum(["production", "uat"]).default("production"),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // AI
@@ -57,6 +61,7 @@ export const features = () => {
   const e = env();
   return {
     google: Boolean(e.GOOGLE_CLIENT_ID && e.GOOGLE_CLIENT_SECRET),
+    payu: Boolean(e.PAYU_CLIENT_ID && e.PAYU_CLIENT_SECRET && e.PAYU_MERCHANT_ID),
     razorpay: Boolean(e.RAZORPAY_KEY_ID && e.RAZORPAY_KEY_SECRET),
     stripe: Boolean(e.STRIPE_SECRET_KEY),
     testPayments: e.PAYMENTS_MODE === "test",

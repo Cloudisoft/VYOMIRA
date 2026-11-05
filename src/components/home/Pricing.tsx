@@ -1,15 +1,12 @@
 import { Check } from "lucide-react";
-import { getConfig } from "@/server/config";
-import { detectCountry } from "@/server/country";
-import { formatMoney, regionFor } from "@/lib/pricing";
+import { chargeRegion } from "@/server/pricing-region";
+import { formatMoney } from "@/lib/pricing";
 import { SectionHeading, Reveal } from "@/components/ui/Reveal";
 import { CountrySelect, BuyButton } from "./PricingClient";
 import { cn } from "@/lib/utils";
 
 export async function Pricing({ compact = false }: { compact?: boolean }) {
-  const pricing = await getConfig("pricing");
-  const country = await detectCountry();
-  const { key, region } = regionFor(country, pricing);
+  const { pricing, country, key, region, inrOnly } = await chargeRegion();
   return (
     <section id="pricing" className="relative scroll-mt-24 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
@@ -45,7 +42,8 @@ export async function Pricing({ compact = false }: { compact?: boolean }) {
             </Reveal>
           ))}
         </div>
-        <p className="mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate/80">Prices include applicable taxes where required. Payments are processed by Razorpay; we never see or store your card details. A message is one AURA reply; guardrail responses, repeated identical questions and failed generations are never charged. See our <a className="underline" href="/legal/refunds">refund policy</a>.</p>
+        {inrOnly && <p className="mx-auto mt-8 max-w-2xl text-center text-sm text-gold/90">International cards are charged in Indian rupees; your bank converts the amount to your currency.</p>}
+        <p className="mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate/80">Prices include applicable taxes where required. Payments are processed by PayU; we never see or store your card details. A message is one AURA reply; guardrail responses, repeated identical questions and failed generations are never charged. See our <a className="underline" href="/legal/refunds">refund policy</a>.</p>
       </div>
     </section>
   );

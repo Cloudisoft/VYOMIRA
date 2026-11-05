@@ -4,7 +4,7 @@ import { SectionHeading, Reveal } from "@/components/ui/Reveal";
 import { COMPUTATION_VERSION } from "@/lib/astro/chart";
 
 const PILLARS = [
-  { icon: Telescope, t: "Astronomy", d: "Planetary positions are computed — not looked up — and regression-tested against an independent Swiss Ephemeris reference across centuries, hemispheres and DST edges. Typical agreement: within a few arcseconds." },
+  { icon: Telescope, t: "Astronomy", d: "Planetary positions, all 16 divisional charts, Ashtakavarga, Shadbala, true node and Western Placidus houses are regression-tested against Swiss Ephemeris and PyJHora across centuries, hemispheres and DST edges. Typical agreement: within a few arcseconds." },
   { icon: ScrollText, t: "Astrology", d: "Interpretations come from a versioned rule catalog rooted in Parashari tradition. They are traditional readings, not scientific predictions, and we say so." },
   { icon: Cpu, t: "AI", d: "The language model only phrases evidence we hand it. A validator rejects any placement, yoga, dasha or date not in your chart, and falls back to the rule engine." },
   { icon: Lock, t: "Privacy", d: "Birth details are encrypted at rest with AES-256-GCM, never written to logs or analytics, and shared with an AI provider only with your explicit consent." },

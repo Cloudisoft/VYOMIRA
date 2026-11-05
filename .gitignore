@@ -13,3 +13,4 @@ next-env.d.ts
 .venv/
 __pycache__/
 .DS_Store
+tests/fixtures/pyjhora-north-compat.csv

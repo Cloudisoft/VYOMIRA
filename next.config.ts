@@ -12,7 +12,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   serverExternalPackages: ["@prisma/client", "pg", "ioredis"],
-  outputFileTracingIncludes: { "/api/**": ["./data/places.json"] },
+  outputFileTracingIncludes: { "/api/**": ["./data/places.json", "./assets/fonts/**"] },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

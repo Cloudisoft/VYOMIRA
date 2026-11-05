@@ -2,14 +2,15 @@
 import { motion } from "motion/react";
 import { PLANET_INFO, SIGNS, type Planet } from "@/lib/astro/constants";
 import type { ChartResult } from "@/lib/astro/chart";
-import type { Varga } from "./KundliChart";
+import { vargaTable, type Varga } from "./KundliChart";
 
 /** Artistic sky view: the zodiac as a ring, each graha at its exact sidereal longitude. */
 export function PlanetaryOrrery({ chart, varga, selected, onSelect }: { chart: ChartResult; varga: Varga; selected: Planet | null; onSelect: (p: Planet | null) => void }) {
   const R = 170;
   // In D1 we place planets by exact longitude; in vargas by the middle of their varga sign.
-  const lonOf = (p: ChartResult["placements"][number]) => (varga === "D1" ? p.longitude : (chart.vargas[varga][p.planet] as number) * 30 + 15);
-  const asc = varga === "D1" ? chart.lagna?.longitude ?? null : chart.vargas[varga].Lagna !== null ? (chart.vargas[varga].Lagna as number) * 30 + 15 : null;
+  const vt = vargaTable(chart, varga);
+  const lonOf = (p: ChartResult["placements"][number]) => (vt ? (vt[p.planet] as number) * 30 + 15 : p.longitude);
+  const asc = !vt ? chart.lagna?.longitude ?? null : vt.Lagna !== null && vt.Lagna !== undefined ? (vt.Lagna as number) * 30 + 15 : null;
   const rot = asc !== null ? 180 - asc : 0; // ascendant on the left, as in a horoscope wheel
   const pt = (lon: number, r: number) => { const a = ((-(lon + rot)) * Math.PI) / 180; return [Number((Math.cos(a) * r).toFixed(2)), Number((Math.sin(a) * r).toFixed(2))]; };
   const radii = [128, 108, 88, 68];

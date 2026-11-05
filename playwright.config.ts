@@ -20,6 +20,6 @@ export default defineConfig({
     port,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { PAYMENTS_MODE: "test", AI_PROVIDER: "none", BETTER_AUTH_URL: `http://localhost:${port}`, TRUSTED_ORIGINS: `http://localhost:${port}` },
+    env: { PAYMENTS_MODE: "test", AI_PROVIDER: "none", PAYU_CLIENT_ID: "", PAYU_MERCHANT_ID: "", BETTER_AUTH_URL: `http://localhost:${port}`, TRUSTED_ORIGINS: `http://localhost:${port}` },
   },
 });
