@@ -1,10 +1,11 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { pgConfig } from "../src/server/db-connection";
 import { RULE_REGISTRY } from "../src/lib/interpret/rule-catalog";
 import { COMPUTATION_VERSION } from "../src/lib/astro/chart";
 
-const db = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
+const db = new PrismaClient({ adapter: new PrismaPg(pgConfig()) });
 
 async function main() {
   await db.computationVersion.upsert({ where: { id: COMPUTATION_VERSION.id }, create: { id: COMPUTATION_VERSION.id, conventions: COMPUTATION_VERSION as never }, update: {} });

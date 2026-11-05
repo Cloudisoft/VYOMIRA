@@ -6,6 +6,10 @@ const schema = z.object({
   /** Deployment stage. Only APP_ENV=production enforces live-payment and secret-strength rules. */
   APP_ENV: z.enum(["development", "staging", "production"]).default("development"),
   DATABASE_URL: z.string().min(1),
+  /** Non-pooled connection for migrations (Supabase: session pooler, port 5432). Optional. */
+  DIRECT_URL: z.string().optional(),
+  /** Supabase (or other private-CA) root certificate, PEM or base64. Optional. */
+  DATABASE_CA_CERT: z.string().optional(),
   REDIS_URL: z.string().optional(),
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url().optional(),
