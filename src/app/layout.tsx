@@ -18,12 +18,17 @@ export const metadata: Metadata = {
   category: "Astrology",
   applicationName: "VYOMIRA",
   keywords: ["free Kundli", "Janam Kundli online", "Vedic astrology", "Kundli", "birth chart", "AI astrologer", "Vimshottari Dasha", "Sade Sati", "Nakshatra", "Navamsa", "Guna Milan", "Jyotish", "Hindi Kundli"],
-  openGraph: { type: "website", siteName: "VYOMIRA", title: "VYOMIRA — Your Universe. Your Story.", description: "Premium cosmic experience. Transparent Vedic calculations. Personal guidance at an accessible price.", images: ["/brand/vyomira-banner.webp"] },
-  twitter: { card: "summary_large_image", images: ["/brand/vyomira-banner.webp"] },
+  openGraph: { type: "website", siteName: "VYOMIRA", locale: "en_IN", url: "/", title: "VYOMIRA — Free Vedic Kundli & AI Astrologer", description: "Free Janam Kundli from real astronomy. Your past, present and future in simple words — English, हिन्दी, Hinglish. Ask AURA, the AI astrologer that shows its reasons.", images: [{ url: "/og/default.jpg", width: 1200, height: 630, alt: "VYOMIRA — Free Vedic Kundli & AI Astrologer" }] },
+  twitter: { card: "summary_large_image", title: "VYOMIRA — Free Vedic Kundli & AI Astrologer", description: "Free Janam Kundli from real astronomy. Past, present and future in simple words.", images: ["/og/default.jpg"] },
   robots: { index: true, follow: true },
-  icons: { apple: "/brand/vyomira-app-logo.png" },
+  appleWebApp: { capable: true, title: "VYOMIRA", statusBarStyle: "black-translucent" },
+  formatDetection: { telephone: false },
   // Google Search Console ownership (HTML tag method): set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION to the content value.
-  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } } : {}),
+  verification: {
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } : {}),
+    // Bing Webmaster Tools "meta tag" method: set NEXT_PUBLIC_BING_SITE_VERIFICATION to the content value
+    ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION } } : {}),
+  },
 };
 
 export const viewport: Viewport = { themeColor: "#080D20", colorScheme: "dark", width: "device-width", initialScale: 1 };

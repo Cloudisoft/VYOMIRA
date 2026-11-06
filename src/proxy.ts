@@ -17,4 +17,4 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/((?!api/|_next/|favicon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp4|woff2?)$).*)"] };
+export const config = { matcher: ["/((?!api/|_next/|favicon|.*\\.(?:png|jpg|jpeg|webp|svg|ico|mp4|woff2?|txt|webmanifest)$).*)"] };

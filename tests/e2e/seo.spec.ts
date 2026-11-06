@@ -24,3 +24,17 @@ test("answer-engine files and crawler rules", async ({ request }) => {
   expect(robots).toContain("Disallow: /dashboard");
   expect((await (await request.get("/sitemap.xml")).text()).match(/<url>/g)!.length).toBeGreaterThan(20);
 });
+
+test("favicon, app icons, manifest and social share images", async ({ request }) => {
+  const home = await (await request.get("/")).text();
+  expect(home).toMatch(/<link rel="icon" href="\/favicon\.ico/);
+  expect(home).toMatch(/<link rel="apple-touch-icon"/);
+  expect(home).toContain('<link rel="manifest" href="/manifest.webmanifest"/>');
+  expect(home).toMatch(/<meta property="og:image" content="[^"]+\/og\/default\.jpg"/);
+  expect(home).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+  const art = await (await request.get("/learn/sade-sati")).text();
+  expect(art).toMatch(/og:image" content="[^"]+\/og\/learn-sade-sati\.jpg"/);
+  for (const u of ["/favicon.ico", "/apple-icon.png", "/manifest.webmanifest", "/og/default.jpg", "/icons/icon-192.png", "/icons/icon-512.png"]) expect((await request.get(u)).status(), u).toBe(200);
+  const og = await request.get("/og/default.jpg");
+  expect((await og.body()).length).toBeLessThan(300_000); // WhatsApp preview limit
+});

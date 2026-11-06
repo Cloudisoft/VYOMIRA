@@ -83,7 +83,7 @@ export function articleLd(a: { slug: string; title: string; summary: string; upd
     datePublished: a.updated,
     dateModified: a.updated,
     inLanguage: "en-IN",
-    image: abs("/brand/vyomira-banner.webp"),
+    image: abs(`/og/learn-${a.slug}.jpg`),
     author: { "@type": "Organization", name: `${SITE.name} by ${SITE.publisher}`, url: SITE.url },
     publisher: { "@id": abs("/#organization") },
     about: "Vedic astrology (Jyotish)",

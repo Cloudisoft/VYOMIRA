@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ARTICLES } from "@/lib/learn";
 
-export const metadata: Metadata = { title: "Learn Vedic Astrology (Jyotish) — Kundli, Dasha, Sade Sati & more", description: "Plain-language guides to the Janam Kundli, how to read your birth chart, Vimshottari dasha, Sade Sati, Rahu and Ketu, Manglik dosha, nakshatras and divisional charts.", alternates: { canonical: "/learn" } };
+export const metadata: Metadata = { title: "Learn Vedic Astrology (Jyotish) — Kundli, Dasha, Sade Sati & more", description: "Plain-language guides to the Janam Kundli, how to read your birth chart, Vimshottari dasha, Sade Sati, Rahu and Ketu, Manglik dosha, nakshatras and divisional charts.", alternates: { canonical: "/learn" }, openGraph: { url: "/learn", images: [{ url: "/og/learn.jpg", width: 1200, height: 630 }] }, twitter: { card: "summary_large_image", images: ["/og/learn.jpg"] } };
 
 export default function Learn() {
   return (
