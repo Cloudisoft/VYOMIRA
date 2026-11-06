@@ -50,6 +50,8 @@ export interface LifeGuide {
   basis: "lagna" | "moon";
   caveat: string | null;
   range: { start: string; end: string };
+  /** the moment this guide was computed for */
+  now: string;
 }
 
 /** Slow-planet sign windows (from transit ingresses), computed once per day and cached by the caller. */
@@ -252,5 +254,6 @@ export function lifeGuide(chart: ChartResult, transits: TransitSummary, name: st
     basis: chart.lagna ? "lagna" : "moon",
     caveat: chart.confidence.dashaTimingReliable ? null : D.t.caveat,
     range: { start: new Date(from).toISOString(), end: new Date(to).toISOString() },
+    now: now.toISOString(),
   };
 }

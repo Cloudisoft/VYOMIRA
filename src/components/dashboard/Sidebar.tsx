@@ -7,25 +7,26 @@ import { Logo } from "@/components/brand/Logo";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/dashboard", label: "My Universe", icon: Orbit },
-  { href: "/dashboard/guide", label: "My Life Guide", icon: BookOpen },
-  { href: "/dashboard/kundli", label: "My Kundli", icon: CircleDot },
-  { href: "/dashboard/aura", label: "Ask AURA", icon: Sparkles },
-  { href: "/dashboard/timeline", label: "Cosmic Timeline", icon: CalendarRange },
-  { href: "/dashboard/daily", label: "Daily Insights", icon: Sun },
-  { href: "/dashboard/compatibility", label: "Compatibility", icon: HeartHandshake },
-  { href: "/dashboard/reports", label: "My Reports", icon: FileText },
-  { href: "/dashboard/saved", label: "Saved Readings", icon: Bookmark },
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+export type NavLabels = { home: string; guide: string; kundli: string; aura: string; timeline: string; daily: string; compat: string; reports: string; saved: string; billing: string; settings: string; admin: string; signOut: string };
+const NAV = (L: NavLabels) => [
+  { href: "/dashboard", label: L.home, icon: Orbit },
+  { href: "/dashboard/guide", label: L.guide, icon: BookOpen },
+  { href: "/dashboard/kundli", label: L.kundli, icon: CircleDot },
+  { href: "/dashboard/aura", label: L.aura, icon: Sparkles },
+  { href: "/dashboard/timeline", label: L.timeline, icon: CalendarRange },
+  { href: "/dashboard/daily", label: L.daily, icon: Sun },
+  { href: "/dashboard/compatibility", label: L.compat, icon: HeartHandshake },
+  { href: "/dashboard/reports", label: L.reports, icon: FileText },
+  { href: "/dashboard/saved", label: L.saved, icon: Bookmark },
+  { href: "/dashboard/billing", label: L.billing, icon: CreditCard },
+  { href: "/dashboard/settings", label: L.settings, icon: Settings },
 ];
 
-export function Sidebar({ name, email, isAdmin }: { name: string; email: string; isAdmin: boolean }) {
+export function Sidebar({ name, email, isAdmin, labels }: { name: string; email: string; isAdmin: boolean; labels: NavLabels }) {
   const path = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const items = isAdmin ? [...NAV, { href: "/admin", label: "Admin", icon: Shield }] : NAV;
+  const items = isAdmin ? [...NAV(labels), { href: "/admin", label: labels.admin, icon: Shield }] : NAV(labels);
   const content = (
     <div className="flex h-full flex-col">
       <Link href="/" className="px-2" aria-label="VYOMIRA home"><Logo /></Link>
@@ -48,7 +49,7 @@ export function Sidebar({ name, email, isAdmin }: { name: string; email: string;
       <div className="mt-6 rounded-2xl border hairline bg-surface/50 p-4">
         <p className="truncate text-sm text-moon">{name}</p>
         <p className="truncate text-xs text-slate">{email}</p>
-        <button onClick={async () => { await signOut(); router.push("/"); router.refresh(); }} className="mt-3 inline-flex items-center gap-2 text-xs text-slate hover:text-moon"><LogOut className="h-3.5 w-3.5" /> Sign out</button>
+        <button onClick={async () => { await signOut(); router.push("/"); router.refresh(); }} className="mt-3 inline-flex items-center gap-2 text-xs text-slate hover:text-moon"><LogOut className="h-3.5 w-3.5" /> {labels.signOut}</button>
       </div>
     </div>
   );

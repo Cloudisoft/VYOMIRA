@@ -6,12 +6,13 @@ import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { PlaceAutocomplete, type PlaceOption } from "./PlaceAutocomplete";
 import { OrbitLoader } from "./OrbitLoader";
 import type { BirthInput } from "@/lib/schemas";
+import type { LifeGuide } from "@/lib/interpret/life-guide";
 import type { ChartResult } from "@/lib/astro/chart";
 import type { Reading } from "@/lib/interpret/narrative";
 import { activePeriods } from "@/lib/astro/dasha";
 import { cn } from "@/lib/utils";
 
-export interface PreviewState { birth: BirthInput; placeLabel: string; chart: ChartResult; insight: Reading }
+export interface PreviewState { birth: BirthInput; placeLabel: string; chart: ChartResult; insight: Reading; guide?: LifeGuide | null }
 export const PREVIEW_KEY = "vy_preview";
 
 const STEPS = ["Name", "Date", "Time", "Place", "Preferences"] as const;
@@ -55,7 +56,7 @@ export function Wizard() {
       const r = await fetch("/api/charts/preview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(birth) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.issues?.[0]?.message ?? j.error ?? "Calculation failed");
-      const state: PreviewState = { birth, placeLabel: place.label, chart: j.chart, insight: j.insight };
+      const state: PreviewState = { birth, placeLabel: place.label, chart: j.chart, insight: j.insight, guide: j.guide ?? null };
       sessionStorage.setItem(PREVIEW_KEY, JSON.stringify(state));
       window.dispatchEvent(new Event("vy-session"));
       setResult(state);

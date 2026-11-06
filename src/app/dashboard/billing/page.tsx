@@ -1,4 +1,6 @@
 import { requireUser } from "@/server/session";
+import { userLang } from "@/server/lang";
+import { UI } from "@/lib/i18n/ui";
 import { COMPANY, telHref } from "@/lib/company";
 import { db } from "@/server/db";
 import { balance } from "@/server/billing/entitlements";
@@ -17,6 +19,7 @@ export const metadata = { title: "Billing" };
 
 export default async function BillingPage({ searchParams }: { searchParams: Promise<{ plan?: string; status?: string; payu?: string; sub?: string; renew?: string }> }) {
   const user = await requireUser();
+  const lang = await userLang(user.id);
   const sp = await searchParams;
   const [bal, payments, pricing, country, usage] = await Promise.all([
     balance(user.id),
@@ -31,7 +34,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
   void country;
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Billing" title="Plans & messages" intro="Choose a monthly plan or a one-time pack. Monthly plans can be cancelled anytime." />
+      <PageHeader eyebrow={UI[lang].pages.billing[0]} title={UI[lang].pages.billing[1]} intro={lang === "en" ? "Choose a monthly plan or a one-time pack. Monthly plans can be cancelled anytime." : undefined} />
       {sp.payu && /^c[a-z0-9]{20,}$/.test(sp.payu) && <PayuReturn paymentId={sp.payu} />}
       {sp.status === "processing" && <p className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">Payment received by the provider — your pack activates as soon as we receive their confirmation (usually seconds).</p>}
       {f.payu && (pricing.subscriptions?.length ?? 0) > 0 && (

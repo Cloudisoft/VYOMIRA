@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Bookmark, Flag, Loader2, MessageSquarePlus, Send, Sparkles, ThumbsDown, ThumbsUp, Trash2, Layers } from "lucide-react";
 import { renderMarkdown } from "@/lib/markdown";
-import { SUGGESTIONS } from "./AskBox";
+import { SUGGESTIONS_L } from "./AskBox";
 import { cn } from "@/lib/utils";
 
 interface Evidence { topicLabel: string; factors: { id: string; statement: string; interpretation: string; polarity: string }[]; timing: { label: string; start: string; end: string; basis: string }[]; notes: string[]; rulesVersion: string; computationVersion: string }
@@ -92,7 +92,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
       <aside className="order-2 lg:order-1">
-        <button onClick={() => { openConv(null); router.replace("/dashboard/aura"); }} className="btn-ghost w-full !py-2.5 text-sm"><MessageSquarePlus className="h-4 w-4" /> New conversation</button>
+        <button onClick={() => { openConv(null); router.replace("/dashboard/aura"); }} className="btn-ghost w-full !py-2.5 text-sm"><MessageSquarePlus className="h-4 w-4" /> {lang === "hi" ? "नई बातचीत" : lang === "hinglish" ? "Nayi baat-cheet" : "New conversation"}</button>
         <ul className="mt-4 space-y-1">
           {convs.map((c) => (
             <li key={c.id} className={cn("group flex items-center gap-1 rounded-xl", c.id === convId && "bg-moon/5")}>
@@ -111,7 +111,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
           </div>
           <div className="flex items-center gap-3">
             <select aria-label="Answer language" value={lang} onChange={(e) => setLang(e.target.value as typeof lang)} className="rounded-full border hairline bg-navy px-3 py-1.5 text-xs text-moon">{LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-            <span className="rounded-full bg-gold/10 px-3 py-1.5 text-xs text-gold">{bal} left</span>
+            <span className="rounded-full bg-gold/10 px-3 py-1.5 text-xs text-gold">{lang === "hi" ? `${bal} शेष` : lang === "hinglish" ? `${bal} bache` : `${bal} left`}</span>
           </div>
         </header>
         {(!aiConfigured || !aiConsent) && (
@@ -127,10 +127,10 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6" aria-live="polite">
           {msgs.length === 0 && (
             <div className="py-6">
-              <p className="font-display text-3xl">What would you like to understand?</p>
-              <p className="mt-2 text-sm text-slate">AURA answers from your computed chart and shows the factors behind every answer.</p>
+              <p className="font-display text-3xl">{lang === "hi" ? "आप क्या जानना चाहेंगे?" : lang === "hinglish" ? "Aap kya jaanna chahenge?" : "What would you like to understand?"}</p>
+              <p className="mt-2 text-sm text-slate">{lang === "hi" ? "AURA आपकी गणना की गई कुंडली से उत्तर देता है — आसान शब्दों में, समय के साथ।" : lang === "hinglish" ? "AURA aapki calculated kundli se jawaab deta hai — aasaan shabdon mein, timing ke saath." : "AURA answers from your computed chart — in simple words, with timing."}</p>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                {Object.entries(SUGGESTIONS).map(([topic, qs]) => (
+                {Object.entries(SUGGESTIONS_L[lang]).map(([topic, qs]) => (
                   <div key={topic}>
                     <p className="mb-2 text-[11px] tracking-[0.2em] text-gold uppercase">{topic}</p>
                     {qs.map((x) => <button key={x} onClick={() => send(x)} className="mb-2 block w-full rounded-xl border hairline px-3.5 py-2.5 text-left text-sm text-slate hover:border-amethyst/40 hover:text-moon">{x}</button>)}

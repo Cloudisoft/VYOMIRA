@@ -25,8 +25,10 @@ test("primary user journey", async ({ page }) => {
   await expect(page.getByText("cosmic blueprint")).toBeVisible();
   await expect(page.getByText(/Birth time is approximate/)).toBeVisible();
 
-  await page.getByRole("button", { name: "What does my current Mahadasha indicate?" }).click();
-  await expect(page.getByText(/Mahadasha/).nth(1)).toBeVisible();
+  // The blueprint shows the plain-language Life Guide and answers questions with dated timing
+  await expect(page.getByRole("heading", { name: "Your life timeline, area by area" })).toBeVisible();
+  await page.getByRole("button", { name: "How will my career be in the next 2 years?" }).click();
+  await expect(page.getByText("In short:").first()).toBeVisible();
 
   await page.getByRole("link", { name: /Create free account/ }).click();
   await page.waitForLoadState("networkidle");

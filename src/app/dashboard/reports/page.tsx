@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { userLang } from "@/server/lang";
+import { UI } from "@/lib/i18n/ui";
 import { requireUser } from "@/server/session";
 import { db } from "@/server/db";
 import { balance } from "@/server/billing/entitlements";
@@ -10,10 +12,11 @@ export const metadata = { title: "My Reports" };
 
 export default async function ReportsPage() {
   const user = await requireUser();
+  const lang = await userLang(user.id);
   const [bal, reports] = await Promise.all([balance(user.id), db.report.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, select: { id: true, type: true, createdAt: true } })]);
   return (
     <div className="space-y-10">
-      <PageHeader eyebrow="Reports" title="My Reports" intro="Each report cites the placements and rules it uses. Regenerating with unchanged chart facts and date context simply reopens your existing report — you're never charged twice." />
+      <PageHeader eyebrow={UI[lang].pages.reports[0]} title={UI[lang].pages.reports[1]} intro={lang === "en" ? "Each report cites the placements and rules it uses. Regenerating with unchanged chart facts and date context simply reopens your existing report — you're never charged twice." : undefined} />
       <ul className="grid gap-4 md:grid-cols-2">
         {Object.entries(REPORT_TYPES).map(([type, d]) => {
           const locked = d.premium && !bal.detailedReports;

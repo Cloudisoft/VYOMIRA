@@ -24,12 +24,13 @@ export function Panel({ children, className, title, action }: { children: ReactN
   );
 }
 
-export function NoChart() {
+export function NoChart({ t }: { t?: { title: string; text: string; cta: string } }) {
+  const x = t ?? { title: "Your sky awaits", text: "Add your birth details to calculate your Kundli. It takes about a minute.", cta: "Enter birth details" };
   return (
     <div className="glass mx-auto max-w-xl rounded-[2rem] p-10 text-center">
-      <h2 className="font-display text-4xl">Your sky awaits</h2>
-      <p className="mt-3 text-slate">Add your birth details to calculate your Kundli. It takes about a minute.</p>
-      <Link href="/onboarding" className="btn-primary mt-8">Enter birth details</Link>
+      <h2 className="font-display text-4xl">{x.title}</h2>
+      <p className="mt-3 text-slate">{x.text}</p>
+      <Link href="/onboarding" className="btn-primary mt-8">{x.cta}</Link>
     </div>
   );
 }

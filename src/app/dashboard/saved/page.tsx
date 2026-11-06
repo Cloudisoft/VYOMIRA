@@ -1,4 +1,6 @@
 import { requireUser } from "@/server/session";
+import { userLang } from "@/server/lang";
+import { UI } from "@/lib/i18n/ui";
 import { db } from "@/server/db";
 import { PageHeader } from "@/components/dashboard/ui";
 import { renderMarkdown } from "@/lib/markdown";
@@ -8,10 +10,11 @@ export const metadata = { title: "Saved Readings" };
 
 export default async function SavedPage() {
   const user = await requireUser();
+  const lang = await userLang(user.id);
   const readings = await db.reading.findMany({ where: { userId: user.id, saved: true }, orderBy: { createdAt: "desc" }, take: 100 });
   return (
     <div>
-      <PageHeader eyebrow="Your collection" title="Saved Readings" intro="Answers you bookmarked in AURA, kept with the chart factors that informed them." />
+      <PageHeader eyebrow={UI[lang].pages.saved[0]} title={UI[lang].pages.saved[1]} intro={lang === "en" ? "Answers you bookmarked in AURA, kept with the chart factors that informed them." : undefined} />
       {readings.length === 0 ? (
         <p className="text-slate">Nothing saved yet. Use the bookmark under any AURA answer. <Link className="text-gold" href="/dashboard/aura">Ask AURA →</Link></p>
       ) : (

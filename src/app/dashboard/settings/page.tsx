@@ -1,4 +1,6 @@
 import { requireUser } from "@/server/session";
+import { userLang } from "@/server/lang";
+import { UI } from "@/lib/i18n/ui";
 import { loadChart } from "@/server/charts";
 import { hasConsent } from "@/server/consent";
 import { PageHeader, Panel } from "@/components/dashboard/ui";
@@ -9,10 +11,11 @@ export const metadata = { title: "Settings" };
 
 export default async function SettingsPage() {
   const user = await requireUser();
+  const lang = await userLang(user.id);
   const [loaded, ai, marketing] = await Promise.all([loadChart(user.id), hasConsent(user.id, "ai_processing"), hasConsent(user.id, "marketing")]);
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Settings" title="Account & privacy" />
+      <PageHeader eyebrow={UI[lang].pages.settings[0]} title={UI[lang].pages.settings[1]} />
       <Panel title="Birth profile">
         {loaded ? (
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">

@@ -90,3 +90,22 @@ export function cosmicCalendar(chart: ChartResult, tz: string, days = 14, now = 
   return out;
 }
 export { NAKSHATRAS };
+
+/* ---------------- Localised daily text (Hindi / Hinglish) ---------------- */
+type DLang = "en" | "hi" | "hinglish";
+const HINT_HI: Record<number, string> = { 1: "ध्यान आप पर रहेगा — ऊर्जा, रूप-रंग और आपकी उपस्थिति", 2: "परिवार, धन और वाणी का महत्व बढ़ेगा", 3: "संदेश, छोटी यात्राओं और पहल के लिए अच्छा समय", 4: "घर और मन के सुकून पर ध्यान दें", 5: "रचनात्मकता, पढ़ाई और मनोरंजन पर ज़ोर", 6: "दिनचर्या, सेहत की आदतें और अधूरे काम निपटाना अच्छा रहेगा", 7: "साथी और आमने-सामने की बातचीत आगे रहेगी", 8: "मन भीतर की ओर — शोध और चिंतन के लिए उपयुक्त", 9: "गुरु, विचार और बड़ी तस्वीर पर ज़ोर", 10: "काम और प्रतिष्ठा केंद्र में", 11: "मित्र, नेटवर्क और लाभ पर ज़ोर", 12: "विश्राम, एकांत और छोड़ने का समय" };
+const HINT_HG: Record<number, string> = { 1: "dhyan aap par rahega — energy, look aur aapki presence", 2: "parivaar, paisa aur vaani ka mahatva badhega", 3: "messages, chhoti yatra aur pehal ke liye achha time", 4: "ghar aur mann ke sukoon par dhyan dijiye", 5: "creativity, padhai aur masti par zor", 6: "routine, health habits aur pending kaam nipatana achha rahega", 7: "partner aur aamne-saamne ki baat-cheet aage rahegi", 8: "mann andar ki taraf — research aur soch-vichaar ke liye sahi", 9: "guru, ideas aur badi picture par zor", 10: "kaam aur reputation focus mein", 11: "dost, network aur faayde par zor", 12: "aaram, ekaant aur chhodne ka time" };
+const TARA_HI = ["आपका जन्म-नक्षत्र — नए काम के बजाय स्थिरता का दिन", "लाभ और साधनों से जुड़ा शुभ दिन", "योजनाएँ दोबारा जाँचें और बेवजह जोखिम से बचें", "कुशलता और सुरक्षा से जुड़ा शुभ दिन", "रुकावट जैसा दिन — धैर्य फल देगा", "मेहनत और उपलब्धि के लिए सहायक दिन", "नई शुरुआत के बजाय विश्राम और सावधानी का दिन", "मैत्रीपूर्ण और सहयोगी दिन", "नौ ताराओं में सबसे शुभ दिन"];
+const TARA_HG = ["aapka janam-nakshatra — naye kaam ke bajaay sthirta ka din", "laabh aur resources se juda shubh din", "plans dobara check kijiye aur bekaar risk se bachiye", "kushalta aur suraksha se juda shubh din", "rukavat jaisa din — dhairya phal dega", "mehnat aur achievement ke liye supportive din", "nayi shuruaat ke bajaay aaram aur savdhaani ka din", "dostana aur sahyog wala din", "nau taraon mein sabse shubh din"];
+const SIGN_HI = ["मेष", "वृषभ", "मिथुन", "कर्क", "सिंह", "कन्या", "तुला", "वृश्चिक", "धनु", "मकर", "कुंभ", "मीन"];
+const SIGN_HG = ["Mesh", "Vrishabh", "Mithun", "Kark", "Singh", "Kanya", "Tula", "Vrishchik", "Dhanu", "Makar", "Kumbh", "Meen"];
+
+/** The day's insight sentence in the user's language (same facts as `text`). */
+export function dailyTextL(d: DailyInsight, lang: DLang): string {
+  if (lang === "en") return d.text;
+  const si = SIGNS.findIndex((s) => s.name === d.moon.sign);
+  const ti = TARAS.findIndex((t) => t.name === d.tara.name);
+  const h = d.moon.houseFromMoon;
+  if (lang === "hi") return `आज चंद्रमा ${SIGN_HI[si]} राशि में, ${d.moon.nakshatra} नक्षत्र में है — आपकी जन्म-राशि से ${h}वीं राशि, जहाँ ${HINT_HI[h]}। ${d.moon.favorable ? "पारंपरिक गोचर इस स्थिति को शुभ मानता है।" : "पारंपरिक गोचर के अनुसार इस स्थिति में सहजता से चलें।"} आज आपका तारा बल ${d.tara.name} है: ${TARA_HI[ti]}।`;
+  return `Aaj Chandrama ${SIGN_HG[si]} rashi mein, ${d.moon.nakshatra} nakshatra mein hai — aapki janam-rashi se ${h}vi rashi, jahan ${HINT_HG[h]}. ${d.moon.favorable ? "Paramparik gochar is position ko shubh maanta hai." : "Paramparik gochar ke hisaab se is position mein aaram se chaliye."} Aaj aapka Tara Bala ${d.tara.name} hai: ${TARA_HG[ti]}.`;
+}

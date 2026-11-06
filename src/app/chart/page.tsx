@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PreviewClient } from "./PreviewClient";
@@ -15,7 +16,7 @@ export default function ChartPreviewPage() {
         <Link href="/onboarding" className="text-sm text-slate hover:text-moon">Edit birth details</Link>
       </header>
       <div className="mx-auto max-w-7xl px-6"><BackHome /></div>
-      <PreviewClient />
+      <Suspense><PreviewClient /></Suspense>
       <WhatsAppButton />
     </main>
   );
