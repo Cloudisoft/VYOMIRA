@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
+import { GlobeCanvas } from "./GlobeCanvas";
 
 /**
- * CSS-only rotating planet (phones, low-power devices, while WebGL loads).
- * The surface is a seamless strip twice the sphere's width that slides sideways inside a circular
- * mask; fixed lighting layers on top give the 3D shading, so it reads as a turning globe. The ring is
- * split into a back half (behind the sphere) and a front half (over it). GPU cost: transforms only.
- * Freezes under prefers-reduced-motion (see globals.css).
+ * Planet without WebGL (phones, low-power devices, while WebGL loads): a 2D-canvas globe that truly
+ * rotates (see GlobeCanvas), with an SVG ring split into a back half (behind) and front half (over it)
+ * and an orbiting moon. Slower under prefers-reduced-motion.
  */
 export function PlanetFallback({ className }: { className?: string }) {
   return (
@@ -30,14 +29,8 @@ export function PlanetFallback({ className }: { className?: string }) {
         </g>
       </svg>
 
-      {/* sphere */}
-      <div className="absolute inset-0 overflow-hidden rounded-full bg-[#0b0d2a]">
-        <div className="vy-surface absolute inset-y-0 left-0 w-[200%]" />
-        <div className="vy-clouds absolute inset-y-0 left-0 w-[200%] opacity-50 mix-blend-screen" />
-        {/* lighting: day side top-left, terminator, night side, limb glow */}
-        <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at 30% 28%, rgba(255,240,220,.18) 0%, transparent 38%), radial-gradient(circle at 74% 76%, rgba(3,4,14,.78) 12%, transparent 58%), linear-gradient(120deg, transparent 45%, rgba(216,180,119,.10) 52%, transparent 60%)" }} />
-        <div className="absolute inset-0 rounded-full" style={{ boxShadow: "inset -30px -24px 60px rgba(0,0,0,.6), inset 8px 6px 30px rgba(165,139,255,.35)" }} />
-      </div>
+      {/* sphere: a real rotating globe rendered on a 2D canvas */}
+      <GlobeCanvas className="absolute inset-0 h-full w-full rounded-full" />
       <div className="absolute inset-[-1px] rounded-full border border-amethyst/30 shadow-[0_0_80px_rgba(114,86,216,.35)]" />
 
       {/* ring — front half */}
