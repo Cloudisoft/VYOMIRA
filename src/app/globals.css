@@ -125,6 +125,7 @@
   .prose-aura ul { margin: 0.4em 0 0.8em 1.1em; list-style: disc; }
   .prose-aura li { margin: 0.25em 0; line-height: 1.6; }
   .prose-aura strong { color: #fff; font-weight: 600; }
+  .prose-aura .md-h { font-family: var(--font-display); font-size: 1.35rem; color: var(--color-gold); margin: 1.1em 0 0.3em; }
   .prose-aura em { color: var(--color-slate); }
   .prose-legal h2 { font-size: 1.6rem; margin: 2rem 0 0.75rem; color: #fff; }
   .prose-legal h3 { font-size: 1.2rem; margin: 1.4rem 0 0.5rem; color: var(--color-gold); }

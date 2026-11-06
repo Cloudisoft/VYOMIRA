@@ -87,3 +87,11 @@ describe("validator — Hindi", () => {
     expect(validateText("नीलम रत्न पहनें।", ev).map((x) => x.kind)).toContain("guardrail");
   });
 });
+
+describe("markdown headings", () => {
+  it("renders ### headings safely instead of showing hashes", () => {
+    const html = renderMarkdown("### करियर <b>x</b>\n**अभी:** text");
+    expect(html).toContain('<h4 class="md-h">करियर &lt;b&gt;x&lt;/b&gt;</h4>');
+    expect(html).not.toContain("###");
+  });
+});
