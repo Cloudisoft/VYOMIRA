@@ -14,3 +14,6 @@ next-env.d.ts
 __pycache__/
 .DS_Store
 tests/fixtures/pyjhora-north-compat.csv
+
+# local Redis snapshot
+dump.rdb
