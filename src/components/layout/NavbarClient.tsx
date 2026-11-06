@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Logo } from "@/components/brand/Logo";
 import { cn } from "@/lib/utils";
+import { useSession } from "@/lib/auth-client";
 
 const LINKS = [
   { href: "/#features", label: "Features" },
@@ -15,7 +16,9 @@ const LINKS = [
   { href: "/learn", label: "Learn" },
 ];
 
-export function NavbarClient({ signedIn }: { signedIn: boolean }) {
+export function NavbarClient() {
+  const { data: session } = useSession();
+  const signedIn = Boolean(session);
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useEffect(() => {

@@ -1,12 +1,6 @@
-import { getSession } from "@/server/session";
 import { NavbarClient } from "./NavbarClient";
 
-export async function Navbar() {
-  let signedIn = false;
-  try {
-    signedIn = Boolean(await getSession());
-  } catch {
-    signedIn = false;
-  }
-  return <NavbarClient signedIn={signedIn} />;
+/** Static-friendly navbar: the signed-in state is resolved in the browser (no per-request DB lookup). */
+export function Navbar() {
+  return <NavbarClient />;
 }
