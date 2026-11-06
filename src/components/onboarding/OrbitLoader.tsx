@@ -1,8 +1,8 @@
 "use client";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { SvgSpin } from "@/components/motion/SvgSpin";
 
 export function OrbitLoader({ done = false }: { done?: boolean }) {
-  const reduce = useReducedMotion();
   const rings = [{ r: 34, d: 3.2, c: "#E9E3F5" }, { r: 52, d: 5.6, c: "#A58BFF" }, { r: 70, d: 8.4, c: "#D8B477" }];
   return (
     <svg viewBox="-90 -90 180 180" className="h-44 w-44" role="img" aria-label={done ? "Calculation complete" : "Calculating"}>
@@ -11,9 +11,9 @@ export function OrbitLoader({ done = false }: { done?: boolean }) {
       {rings.map((o, i) => (
         <g key={o.r}>
           <circle r={o.r} fill="none" stroke="rgba(165,139,255,.2)" />
-          <motion.g animate={reduce ? {} : { rotate: 360 }} transition={{ duration: done ? o.d * 3 : o.d, repeat: Infinity, ease: "linear" }}>
+          <SvgSpin key={done ? "slow" : "fast"} duration={done ? o.d * 3 : o.d}>
             <circle cx={o.r} cy="0" r={4 - i * 0.6} fill={o.c} />
-          </motion.g>
+          </SvgSpin>
         </g>
       ))}
     </svg>

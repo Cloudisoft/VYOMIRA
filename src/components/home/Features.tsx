@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "motion/react";
 import { Reveal, SectionHeading } from "@/components/ui/Reveal";
+import { SvgSpin } from "@/components/motion/SvgSpin";
 
 function BirthMoment() {
   return (
@@ -11,8 +12,8 @@ function BirthMoment() {
         const f = (n: number) => n.toFixed(2);
         return <line key={i} x1={f(70 + Math.cos(a) * 40)} y1={f(70 + Math.sin(a) * 40)} x2={f(70 + Math.cos(a) * 46)} y2={f(70 + Math.sin(a) * 46)} stroke="#9BA3BC" strokeWidth="1" />;
       })}
-      <motion.line x1="70" y1="70" x2="70" y2="36" stroke="#D8B477" strokeWidth="2" strokeLinecap="round" style={{ originX: "70px", originY: "70px" }} animate={{ rotate: 360 }} transition={{ duration: 18, repeat: Infinity, ease: "linear" }} />
-      <motion.line x1="70" y1="70" x2="92" y2="70" stroke="#A58BFF" strokeWidth="2" strokeLinecap="round" style={{ originX: "70px", originY: "70px" }} animate={{ rotate: 360 }} transition={{ duration: 120, repeat: Infinity, ease: "linear" }} />
+      <SvgSpin cx={70} cy={70} duration={18}><line x1="70" y1="70" x2="70" y2="36" stroke="#D8B477" strokeWidth="2" strokeLinecap="round" /></SvgSpin>
+      <SvgSpin cx={70} cy={70} duration={120}><line x1="70" y1="70" x2="92" y2="70" stroke="#A58BFF" strokeWidth="2" strokeLinecap="round" /></SvgSpin>
       <circle cx="70" cy="70" r="3" fill="#F1DCAE" />
       <path d="M128 70h44" stroke="url(#fg)" strokeDasharray="3 4" />
       <text x="128" y="56" fill="#9BA3BC" fontSize="8" letterSpacing="1.5">IST +05:30</text>
@@ -31,9 +32,9 @@ function SkyOrbits() {
       {orbits.map((r, i) => (
         <g key={r}>
           <circle cx="100" cy="100" r={r} fill="none" stroke="rgba(165,139,255,.18)" />
-          <motion.g style={{ originX: "100px", originY: "100px" }} animate={{ rotate: 360 }} transition={{ duration: 10 + i * 9, repeat: Infinity, ease: "linear" }}>
+          <SvgSpin cx={100} cy={100} duration={10 + i * 9}>
             <circle cx={100 + r} cy="100" r={3.5 - i * 0.4} fill={["#E9E3F5", "#A58BFF", "#F1DCAE", "#8C9EFF"][i]} />
-          </motion.g>
+          </SvgSpin>
         </g>
       ))}
     </svg>
