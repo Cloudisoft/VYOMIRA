@@ -43,10 +43,16 @@ void main(){
   float bands = 0.5 + 0.5*sin(lat*22.0 + fbm(p*6.0)*3.0);
   float fine = fbm(vec3(p.x*2.0, lat*18.0, p.z*2.0) + uTime*0.01);
   // a single great storm, slightly south of the equator
-  vec3 stormC = normalize(vec3(0.72, -0.28, 0.63));
-  float sd = distance(p, stormC);
-  float storm = smoothstep(0.26, 0.0, sd);
+  // storms spread around the globe so the rotation is easy to read
+  vec3 s1 = normalize(vec3(0.72, -0.28, 0.63));
+  vec3 s2 = normalize(vec3(-0.80, 0.22, 0.55));
+  vec3 s3 = normalize(vec3(0.10, 0.42, -0.90));
+  vec3 s4 = normalize(vec3(-0.35, -0.55, -0.76));
+  float sd = min(min(distance(p, s1), distance(p, s2)*1.15), min(distance(p, s3)*1.3, distance(p, s4)*1.45));
+  float storm = smoothstep(0.30, 0.0, sd);
   float swirl = fbm(p*14.0 + vec3(sd*20.0 - uTime*0.15));
+  // large non-banded patches (continent-like) give strong east-west variation
+  float patches = smoothstep(0.52, 0.68, fbm(p*2.4 + 7.0));
 
   vec3 deep   = vec3(0.035,0.045,0.14);
   vec3 indigo = vec3(0.13,0.12,0.40);
@@ -56,7 +62,8 @@ void main(){
   vec3 col = mix(deep, indigo, bands);
   col = mix(col, violet, smoothstep(0.45,0.85,fine)*0.8);
   col = mix(col, lilac, smoothstep(0.72,0.95,fine*bands)*0.5);
-  col = mix(col, mix(gold, lilac, swirl), storm*0.75);
+  col = mix(col, mix(lilac, gold, fbm(p*5.0)), patches*0.45);
+  col = mix(col, mix(gold, lilac, swirl), storm*0.8);
 
   vec3 N = normalize(vNormalW);
   float ndl = dot(N, uSun);
@@ -161,7 +168,7 @@ function Planet({ reduce }: { reduce: boolean }) {
     const sy = window.scrollY;
     spinBoost.current = reduce ? 0 : Math.min(2.5, spinBoost.current * 0.92 + Math.abs(sy - lastScroll.current) * 0.004);
     lastScroll.current = sy;
-    const speed = reduce ? 0.05 : 0.11 + spinBoost.current * 0.6;
+    const speed = reduce ? 0.08 : 0.22 + spinBoost.current * 0.6;
     if (surface.current) surface.current.rotation.y += dt * speed;
     if (clouds.current) clouds.current.rotation.y += dt * speed * 1.35;
     if (dust.current) dust.current.rotation.y += dt * (reduce ? 0.015 : 0.035 + spinBoost.current * 0.1);

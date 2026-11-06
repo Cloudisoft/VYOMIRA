@@ -35,8 +35,8 @@ export function PlanetFallback({ className }: { className?: string }) {
         <div className="vy-surface absolute inset-y-0 left-0 w-[200%]" />
         <div className="vy-clouds absolute inset-y-0 left-0 w-[200%] opacity-50 mix-blend-screen" />
         {/* lighting: day side top-left, terminator, night side, limb glow */}
-        <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at 30% 28%, rgba(255,240,220,.18) 0%, transparent 38%), radial-gradient(circle at 70% 72%, rgba(3,4,14,.92) 18%, transparent 62%), linear-gradient(120deg, transparent 45%, rgba(216,180,119,.10) 52%, transparent 60%)" }} />
-        <div className="absolute inset-0 rounded-full" style={{ boxShadow: "inset -36px -28px 70px rgba(0,0,0,.7), inset 8px 6px 30px rgba(165,139,255,.35)" }} />
+        <div className="absolute inset-0 rounded-full" style={{ background: "radial-gradient(circle at 30% 28%, rgba(255,240,220,.18) 0%, transparent 38%), radial-gradient(circle at 74% 76%, rgba(3,4,14,.78) 12%, transparent 58%), linear-gradient(120deg, transparent 45%, rgba(216,180,119,.10) 52%, transparent 60%)" }} />
+        <div className="absolute inset-0 rounded-full" style={{ boxShadow: "inset -30px -24px 60px rgba(0,0,0,.6), inset 8px 6px 30px rgba(165,139,255,.35)" }} />
       </div>
       <div className="absolute inset-[-1px] rounded-full border border-amethyst/30 shadow-[0_0_80px_rgba(114,86,216,.35)]" />
 

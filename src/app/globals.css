@@ -158,10 +158,15 @@
     radial-gradient(ellipse 32% 3.5% at 12% 23%, rgb(165 139 255 / 0.4), transparent 70%),
     radial-gradient(ellipse 28% 3% at 58% 80%, rgb(114 86 216 / 0.6), transparent 70%),
     radial-gradient(ellipse 18% 2.5% at 88% 55%, rgb(216 180 119 / 0.35), transparent 70%),
+    radial-gradient(ellipse 10% 6% at 62% 22%, rgb(201 184 255 / 0.55), transparent 70%),
+    radial-gradient(ellipse 8% 5% at 82% 72%, rgb(232 207 156 / 0.6), transparent 70%),
+    radial-gradient(ellipse 12% 9% at 8% 48%, rgb(114 86 216 / 0.7), transparent 70%),
+    radial-gradient(ellipse 16% 12% at 45% 30%, rgb(165 139 255 / 0.32), transparent 70%),
+    radial-gradient(ellipse 14% 10% at 70% 88%, rgb(216 180 119 / 0.28), transparent 70%),
     linear-gradient(180deg, #15134a 0%, #241d66 6%, #3d2f96 10%, #5848bd 12%, #2f2680 15%, #1b1858 21%, #2c2378 27%, #4a3aa8 31%, #2a2172 35%, #18154e 42%, #362a8a 48%, #6a58cc 51%, #3a2d8e 54%, #1d1a5a 60%, #2e2579 66%, #4f40ad 70%, #261f6a 75%, #15134a 82%, #2a2172 88%, #3f3199 93%, #15134a 100%);
   background-size: 50% 100%;
-  filter: blur(1.2px) saturate(1.1);
-  animation: vy-slide 46s linear infinite;
+  filter: blur(0.8px) saturate(1.25) brightness(1.15);
+  animation: vy-slide 24s linear infinite;
 }
 .vy-clouds {
   background:
@@ -170,7 +175,7 @@
     radial-gradient(ellipse 36% 2% at 80% 74%, rgb(201 184 255 / 0.3), transparent 70%),
     radial-gradient(ellipse 18% 2% at 42% 44%, rgb(233 227 245 / 0.25), transparent 70%);
   background-size: 50% 100%;
-  animation: vy-slide 30s linear infinite;
+  animation: vy-slide 16s linear infinite;
 }
 .vy-breathe { animation: vy-breathe 7s ease-in-out infinite; }
 .vy-ring-dust { animation: vy-dash 9s linear infinite; }
@@ -194,8 +199,8 @@
 /* Reduced motion: keep calm ambient motion (slow rotation, twinkle, fades); drop sweeps, flows and zooms. */
 @media (prefers-reduced-motion: reduce) {
   .btn-primary::after, .text-gold-flow, .vy-ring-dust { animation: none !important; }
-  .vy-surface { animation-duration: 90s; }
-  .vy-clouds { animation-duration: 60s; }
+  .vy-surface { animation-duration: 48s; }
+  .vy-clouds { animation-duration: 32s; }
   .vy-orbit > span { animation-duration: 26s; }
   .page-enter { animation-name: vy-fade; }
   [data-tilt] { transform: none !important; }
