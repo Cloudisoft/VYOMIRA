@@ -13,7 +13,8 @@ import { ORDINAL, SIGNIFICATIONS } from "@/lib/interpret/catalog";
 import { NoChart, Panel } from "@/components/dashboard/ui";
 import { AskBox } from "@/components/dashboard/AskBox";
 import { KundliChart } from "@/components/chart/KundliChart";
-import { lifeGuide } from "@/lib/interpret/life-guide";
+import { lifeGuideFor } from "@/server/life-guide";
+import { monthYear, toLang } from "@/lib/interpret/life-guide-i18n";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -36,7 +37,9 @@ export default async function Overview() {
   const act = activePeriods(chart.dasha, new Date());
   const today = dailyInsight(chart, tz);
   const week = cosmicCalendar(chart, tz, 7);
-  const guide = lifeGuide(chart, transits, loaded.fullName);
+  const lang = toLang(loaded.language);
+  const guide = await lifeGuideFor(loaded.chartId, chart, loaded.fullName, lang);
+  const G = { en: ["Your story in simple words", "Open my Life Guide →", "So far", "Right now", "Coming up", "What can I do? →", "good", "needs care", "mixed", "Your first chapter is still unfolding", "A steady stretch ahead"], hi: ["आपकी कहानी, आसान शब्दों में", "मेरी जीवन मार्गदर्शिका खोलें →", "अब तक", "अभी", "आगे", "मैं क्या करूँ? →", "अच्छा", "सावधानी", "मिला-जुला", "आपका पहला अध्याय अभी चल रहा है", "आगे का समय स्थिर है"], hinglish: ["Aapki kahani, aasaan shabdon mein", "Meri Life Guide kholiye →", "Ab tak", "Abhi", "Aage", "Main kya karun? →", "achha", "dhyan rakhein", "mila-jula", "Aapka pehla chapter abhi chal raha hai", "Aage ka time stable hai"] }[lang];
   const slow = transits.placements.filter((p) => ["Jupiter", "Saturn", "Rahu", "Ketu"].includes(p.planet));
 
   return (
@@ -48,27 +51,27 @@ export default async function Overview() {
       </header>
 
       {guide && (
-        <Panel title="Your story in simple words" action={<Link href="/dashboard/guide" className="text-xs text-gold hover:underline">Open my Life Guide →</Link>}>
+        <Panel title={G[0]} action={<Link href="/dashboard/guide" className="text-xs text-gold hover:underline">{G[1]}</Link>}>
           <p className="font-display text-2xl leading-snug text-moon/95">{guide.headline}</p>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <Link href="/dashboard/guide#past" className="rounded-2xl border hairline p-4 transition-colors hover:border-amethyst/40">
-              <p className="text-xs tracking-[0.18em] text-slate uppercase">So far</p>
-              <p className="mt-1 text-sm">{guide.past.length ? guide.past.slice(-2).map((c) => c.title).join(" → ") : "Your first chapter is still unfolding"}</p>
+              <p className="text-xs tracking-[0.18em] text-slate uppercase">{G[2]}</p>
+              <p className="mt-1 text-sm">{guide.past.length ? guide.past.slice(-2).map((c) => c.title).join(" → ") : G[9]}</p>
             </Link>
             <Link href="/dashboard/guide#now" className="rounded-2xl border border-gold/30 bg-gold/[.04] p-4 transition-colors hover:border-gold/50">
-              <p className="text-xs tracking-[0.18em] text-gold uppercase">Right now</p>
-              <p className="mt-1 text-sm">{guide.present.chapter.title}{guide.present.sub ? `, with a touch of ${guide.present.sub.title.toLowerCase()}` : ""}</p>
+              <p className="text-xs tracking-[0.18em] text-gold uppercase">{G[3]}</p>
+              <p className="mt-1 text-sm">{guide.present.chapter.title}{guide.present.sub ? ` · ${guide.present.sub.title}` : ""}</p>
             </Link>
             <Link href="/dashboard/guide#next" className="rounded-2xl border hairline p-4 transition-colors hover:border-amethyst/40">
-              <p className="text-xs tracking-[0.18em] text-slate uppercase">Coming up</p>
-              <p className="mt-1 text-sm">{guide.future[0] ? `${new Date(guide.future[0].date).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}: ${guide.future[0].title}` : "A steady stretch ahead"}</p>
+              <p className="text-xs tracking-[0.18em] text-slate uppercase">{G[4]}</p>
+              <p className="mt-1 text-sm">{guide.future[0] ? `${monthYear(lang, guide.future[0].date)}: ${guide.future[0].title}` : G[10]}</p>
             </Link>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {guide.areas.map((a) => (
-              <Link key={a.key} href="/dashboard/guide#areas" className={`rounded-full px-3 py-1 text-xs ${a.tone === "supportive" ? "bg-gold/15 text-gold" : a.tone === "demanding" ? "bg-[#E07A5F]/15 text-[#F0A08A]" : "bg-moon/5 text-slate"}`}>{a.label}: {a.tone === "supportive" ? "good" : a.tone === "demanding" ? "needs care" : "mixed"}</Link>
+              <Link key={a.key} href="/dashboard/guide#areas" className={`rounded-full px-3 py-1 text-xs ${a.tone === "supportive" ? "bg-gold/15 text-gold" : a.tone === "demanding" ? "bg-[#E07A5F]/15 text-[#F0A08A]" : "bg-moon/5 text-slate"}`}>{a.label}: {a.tone === "supportive" ? G[6] : a.tone === "demanding" ? G[7] : G[8]}</Link>
             ))}
-            <Link href="/dashboard/guide#do" className="rounded-full bg-violet/20 px-3 py-1 text-xs text-moon">What can I do? →</Link>
+            <Link href="/dashboard/guide#do" className="rounded-full bg-violet/20 px-3 py-1 text-xs text-moon">{G[5]}</Link>
           </div>
         </Panel>
       )}

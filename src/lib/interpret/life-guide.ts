@@ -3,36 +3,43 @@ import type { ChartResult, Placement } from "@/lib/astro/chart";
 import type { DashaPeriod } from "@/lib/astro/dasha";
 import { activePeriods } from "@/lib/astro/dasha";
 import type { TransitSummary } from "@/lib/astro/transits";
+import { nextIngress } from "@/lib/astro/transits";
+import { bodyPosition } from "@/lib/astro/positions";
+import { signOf } from "@/lib/astro/math";
+import { DICT, monthYear, ordinal, type AreaKey, type Lang, type Rating } from "./life-guide-i18n";
 
 /**
- * Life Guide — the chart told in plain words: past chapters, the present, what's coming, how each
- * area of life looks right now, and what you can do. Deterministic and grounded only in computed
- * chart facts (dasha periods, house placements and rulerships, dignity, slow transits). It follows
- * traditional Parashari readings and is phrased as guidance, never certainty.
+ * Life Guide — the chart told in plain words, with timing.
+ *
+ * Every life area gets a timeline from ~12 years ago to ~12 years ahead. Each Vimshottari
+ * antardasha is scored for that area by how strongly its two lords (mahadasha + antardasha) are tied
+ * to the area's houses and significators (occupation, rulership, karaka) and how well placed they are
+ * (dignity, house, combustion). Jupiter's and Saturn's real sign changes over the next years then
+ * lift or press particular windows. Output is phrased as traditional Parashari timing — likely
+ * tendencies, never certainties — and never covers death, illness diagnosis or pregnancy.
  */
 
+export type { AreaKey, Lang, Rating } from "./life-guide-i18n";
 export type Tone = "supportive" | "mixed" | "demanding";
-export type AreaKey = "career" | "love" | "money" | "wellbeing" | "home" | "growth";
 
-export interface Chapter {
-  lord: Planet;
-  start: string;
-  end: string;
-  title: string;
-  summary: string; // one plain sentence
-  focus: string[]; // life areas this chapter touches
-  tone: Tone;
-}
+export interface Chapter { lord: Planet; name: string; start: string; end: string; title: string; summary: string; focus: string[]; tone: Tone }
 export interface Upcoming { date: string; title: string; text: string; tone: Tone }
-export interface AreaReading { key: AreaKey; label: string; tone: Tone; text: string; tip: string }
-export interface Remedy {
-  planet: Planet;
-  why: string;
-  habits: string[];
-  traditional: { day: string; mantra: string; colour: string; giving: string };
-  gemstoneNote: string;
+export interface Segment { start: string; end: string; rating: Rating; md: Planet; ad: Planet; jupiter?: boolean }
+export interface Window { start: string; end: string; rating: Rating; text: string; why: string }
+export interface AreaReading {
+  key: AreaKey;
+  label: string;
+  tone: Tone;
+  rating: Rating;
+  text: string; // prediction for now
+  tip: string;
+  timeline: Segment[];
+  past: Window[];
+  next: Window[];
 }
+export interface Remedy { planet: Planet; name: string; why: string; habits: string[]; traditional: { day: string; mantra: string; colour: string; giving: string }; gemstoneNote: string }
 export interface LifeGuide {
+  lang: Lang;
   name: string;
   headline: string;
   past: Chapter[];
@@ -42,207 +49,208 @@ export interface LifeGuide {
   remedies: Remedy[];
   basis: "lagna" | "moon";
   caveat: string | null;
+  range: { start: string; end: string };
 }
 
-const THEMES: Record<Planet, { title: string; gist: string; nature: "benefic" | "malefic" | "neutral" }> = {
-  Sun: { title: "Stepping into your own light", gist: "confidence, recognition and taking charge", nature: "malefic" },
-  Moon: { title: "Home, heart and feelings", gist: "emotions, family, comfort and connecting with people", nature: "benefic" },
-  Mars: { title: "Action, courage and drive", gist: "energy, ambition, property and getting things done", nature: "malefic" },
-  Mercury: { title: "Learning, skills and communication", gist: "study, business, writing, networking and quick thinking", nature: "benefic" },
-  Jupiter: { title: "Growth, wisdom and opportunity", gist: "learning, good guidance, family growth and expanding horizons", nature: "benefic" },
-  Venus: { title: "Love, comfort and creativity", gist: "relationships, beauty, art, luxury and enjoying life", nature: "benefic" },
-  Saturn: { title: "Hard work that builds lasting results", gist: "discipline, responsibility, patience and steady progress", nature: "malefic" },
-  Rahu: { title: "Big ambitions and new territory", gist: "ambition, technology, foreign connections and unconventional paths", nature: "malefic" },
-  Ketu: { title: "Letting go and looking inward", gist: "detachment, intuition, research and spiritual growth", nature: "malefic" },
+/** Slow-planet sign windows (from transit ingresses), computed once per day and cached by the caller. */
+export interface SignWindow { planet: "Jupiter" | "Saturn"; sign: number; start: string; end: string }
+
+const AREA_DEF: Record<AreaKey, { houses: number[]; karakas: Planet[] }> = {
+  career: { houses: [10, 6], karakas: ["Sun", "Saturn", "Mercury"] },
+  business: { houses: [7, 10, 11, 3], karakas: ["Mercury", "Jupiter"] },
+  love: { houses: [7, 5], karakas: ["Venus", "Moon"] },
+  family: { houses: [4, 2], karakas: ["Moon", "Jupiter"] },
+  money: { houses: [2, 11], karakas: ["Jupiter", "Venus"] },
+  fortune: { houses: [9, 5], karakas: ["Jupiter", "Sun"] },
+  health: { houses: [1, 6], karakas: ["Sun", "Moon"] },
+  learning: { houses: [4, 5, 9], karakas: ["Mercury", "Jupiter"] },
 };
+const AREA_KEYS = Object.keys(AREA_DEF) as AreaKey[];
+const NATURE: Record<Planet, "benefic" | "malefic"> = { Sun: "malefic", Moon: "benefic", Mars: "malefic", Mercury: "benefic", Jupiter: "benefic", Venus: "benefic", Saturn: "malefic", Rahu: "malefic", Ketu: "malefic" };
+const MANTRA: Record<Planet, string> = { Sun: "Om Suryaya Namah", Moon: "Om Somaya Namah", Mars: "Om Mangalaya Namah", Mercury: "Om Budhaya Namah", Jupiter: "Om Gurave Namah", Venus: "Om Shukraya Namah", Saturn: "Om Shanaye Namah", Rahu: "Om Rahave Namah", Ketu: "Om Ketave Namah" };
+const MANTRA_HI: Record<Planet, string> = { Sun: "ॐ सूर्याय नमः", Moon: "ॐ सोमाय नमः", Mars: "ॐ मंगलाय नमः", Mercury: "ॐ बुधाय नमः", Jupiter: "ॐ गुरवे नमः", Venus: "ॐ शुक्राय नमः", Saturn: "ॐ शनये नमः", Rahu: "ॐ राहवे नमः", Ketu: "ॐ केतवे नमः" };
+const YEAR = 365.25 * 86400000;
 
-/** What each house means in everyday language. */
-const SHORT: Record<number, string> = { 1: "you and your health", 2: "money and family", 3: "courage and skills", 4: "home and peace of mind", 5: "creativity and romance", 6: "daily work and health habits", 7: "partnerships and marriage", 8: "big life changes", 9: "luck and higher learning", 10: "career and reputation", 11: "income and friendships", 12: "travel, rest and spirituality" };
-
-const HOUSE: Record<number, { area: string; areas: AreaKey[] }> = {
-  1: { area: "yourself, your health and how you come across", areas: ["wellbeing", "growth"] },
-  2: { area: "money, savings, family and the way you speak", areas: ["money", "home"] },
-  3: { area: "courage, skills, short trips and siblings", areas: ["career", "growth"] },
-  4: { area: "home, mother, property and inner peace", areas: ["home", "wellbeing"] },
-  5: { area: "creativity, romance, children and studies", areas: ["love", "growth"] },
-  6: { area: "daily work, health habits, competition and loans", areas: ["career", "wellbeing"] },
-  7: { area: "partnership, marriage and business deals", areas: ["love", "career"] },
-  8: { area: "big changes, shared money and research", areas: ["money", "growth"] },
-  9: { area: "luck, higher learning, travel and mentors", areas: ["growth", "career"] },
-  10: { area: "career, reputation and public life", areas: ["career"] },
-  11: { area: "income, gains, friends and fulfilled wishes", areas: ["money", "love"] },
-  12: { area: "travel abroad, expenses, rest and spirituality", areas: ["growth", "money"] },
-};
-
-const AREAS: Record<AreaKey, { label: string; houses: number[]; karakas: Planet[]; tips: Record<Tone, string> }> = {
-  career: { label: "Career & work", houses: [10, 6, 3], karakas: ["Sun", "Saturn", "Mercury"], tips: { supportive: "Ask for the role, pitch the idea, apply for the promotion — effort is likely to show.", mixed: "Keep delivering steadily; document your wins so they're visible when the timing improves.", demanding: "Focus on skills and reliability rather than big jumps; avoid quitting in frustration." } },
-  love: { label: "Love & relationships", houses: [7, 5, 11], karakas: ["Venus", "Moon"], tips: { supportive: "A good time to meet people, commit, or deepen what you have — say what you feel.", mixed: "Small gestures matter more than big promises; listen before you react.", demanding: "Give each other space and patience; avoid decisions made in anger." } },
-  money: { label: "Money & finances", houses: [2, 11, 9], karakas: ["Jupiter", "Venus"], tips: { supportive: "Good window to save, invest sensibly or start a side income.", mixed: "Budget carefully and avoid impulse buys; build an emergency fund.", demanding: "Avoid risky bets, lending large sums or new loans; protect what you have." } },
-  wellbeing: { label: "Health & energy", houses: [1, 6, 8], karakas: ["Sun", "Moon"], tips: { supportive: "Energy is good — a great time to build a fitness or sleep routine that sticks.", mixed: "Keep a steady routine; rest is productive too.", demanding: "Don't push through exhaustion; regular sleep, simple food and check-ups help." } },
-  home: { label: "Home & family", houses: [4, 2], karakas: ["Moon", "Jupiter"], tips: { supportive: "A warm time for family plans, home improvements or moving.", mixed: "Make time for family conversations; small fixes keep peace.", demanding: "Expect some friction at home — patience and clear communication help." } },
-  growth: { label: "Learning & inner growth", houses: [9, 5, 12], karakas: ["Jupiter", "Ketu"], tips: { supportive: "Learn something new, travel, find a mentor — growth comes easily now.", mixed: "Read, reflect and journal; clarity builds slowly.", demanding: "A time to slow down, meditate and let go of what no longer fits." } },
-};
-
-const REMEDY: Record<Planet, Omit<Remedy, "planet" | "why">> = {
-  Sun: { habits: ["Wake early and get morning sunlight", "Take ownership — lead one thing well", "Respect and reconnect with father figures or mentors"], traditional: { day: "Sunday", mantra: "Om Suryaya Namah", colour: "Saffron, gold", giving: "Wheat or jaggery to those in need" }, gemstoneNote: "Ruby is the traditional stone for the Sun." },
-  Moon: { habits: ["Protect your sleep and keep a calm evening routine", "Spend time near water or in nature", "Call your mother or someone who nurtures you"], traditional: { day: "Monday", mantra: "Om Somaya Namah", colour: "White, silver", giving: "Rice, milk or white clothes" }, gemstoneNote: "Pearl is the traditional stone for the Moon." },
-  Mars: { habits: ["Exercise regularly — channel the energy physically", "Pause before reacting when angry", "Finish one practical project you've been delaying"], traditional: { day: "Tuesday", mantra: "Om Mangalaya Namah", colour: "Red, coral", giving: "Red lentils (masoor) or help someone with physical work" }, gemstoneNote: "Red coral is the traditional stone for Mars." },
-  Mercury: { habits: ["Learn a new skill or take a short course", "Write things down and double-check contracts", "Keep your word on small commitments"], traditional: { day: "Wednesday", mantra: "Om Budhaya Namah", colour: "Green", giving: "Green moong dal or books/stationery for students" }, gemstoneNote: "Emerald is the traditional stone for Mercury." },
-  Jupiter: { habits: ["Find a mentor — or become one", "Read or study something meaningful each week", "Be generous with knowledge and time"], traditional: { day: "Thursday", mantra: "Om Gurave Namah", colour: "Yellow", giving: "Turmeric, chana dal or support a teacher" }, gemstoneNote: "Yellow sapphire is the traditional stone for Jupiter." },
-  Venus: { habits: ["Make time for art, music or beauty", "Appreciate your partner out loud", "Keep spending on comfort within budget"], traditional: { day: "Friday", mantra: "Om Shukraya Namah", colour: "White, pastel pink", giving: "Sweets, perfume or clothes to women in need" }, gemstoneNote: "Diamond or white sapphire is the traditional stone for Venus." },
-  Saturn: { habits: ["Build a fixed daily routine and keep it", "Be patient — slow progress is still progress", "Serve others: help elders, workers or the less fortunate"], traditional: { day: "Saturday", mantra: "Om Shanaye Namah", colour: "Dark blue, black", giving: "Mustard oil, black sesame or food to workers" }, gemstoneNote: "Blue sapphire is the traditional stone for Saturn and is considered the most sensitive — never wear it without careful advice." },
-  Rahu: { habits: ["Limit screen time and avoid shortcuts", "Ground big ambitions in a written plan", "Stay away from intoxicants and get-rich-quick schemes"], traditional: { day: "Saturday", mantra: "Om Rahave Namah", colour: "Smoky grey", giving: "Help at an animal shelter or donate blankets" }, gemstoneNote: "Hessonite (gomed) is the traditional stone for Rahu." },
-  Ketu: { habits: ["Meditate or sit quietly for a few minutes daily", "Declutter — let go of what you don't need", "Follow your intuition, but verify the facts"], traditional: { day: "Tuesday", mantra: "Om Ketave Namah", colour: "Grey, earthy tones", giving: "Feed stray dogs or support a spiritual cause" }, gemstoneNote: "Cat's eye is the traditional stone for Ketu." },
-};
-
+const pl = (c: ChartResult, p: Planet): Placement => c.placements.find((x) => x.planet === p)!;
+const houseOf = (c: ChartResult, p: Planet) => pl(c, p).house ?? pl(c, p).houseFromMoon;
+const ruled = (c: ChartResult, p: Planet) => (c.houses ? c.houses.filter((h) => h.lord === p).map((h) => h.house) : []);
 const year = (iso: string) => new Date(iso).getUTCFullYear();
-const monthYear = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
-const ordinal = (n: number) => `${n}${n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th"}`;
-const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
 
-function placementOf(chart: ChartResult, p: Planet): Placement {
-  return chart.placements.find((x) => x.planet === p)!;
-}
-/** House of a planet — from the Lagna when the birth time is reliable, otherwise from the Moon. */
-function houseOf(chart: ChartResult, p: Planet) {
-  const pl = placementOf(chart, p);
-  return pl.house ?? pl.houseFromMoon;
-}
-function ruledHouses(chart: ChartResult, p: Planet): number[] {
-  return chart.houses ? chart.houses.filter((h) => h.lord === p).map((h) => h.house) : [];
-}
-
-/** How easy a planet's period tends to feel, from its dignity, house and nature. */
-function toneOf(chart: ChartResult, p: Planet): Tone {
-  const pl = placementOf(chart, p);
-  const h = houseOf(chart, p);
+function quality(c: ChartResult, p: Planet): number {
+  const x = pl(c, p), h = houseOf(c, p);
   let s = 0;
-  if (["exalted", "moolatrikona", "own"].includes(pl.dignity)) s += 2;
-  if (pl.dignity === "debilitated") s -= 2;
+  if (["exalted", "moolatrikona", "own"].includes(x.dignity)) s += 2;
+  if (x.dignity === "debilitated") s -= 2;
   if ([1, 4, 5, 7, 9, 10, 11].includes(h)) s += 1;
   if ([6, 8, 12].includes(h)) s -= 1;
-  if (pl.combust) s -= 1;
-  if (THEMES[p].nature === "benefic") s += 1;
-  const rules = ruledHouses(chart, p);
-  if (rules.some((x) => [5, 9].includes(x))) s += 1;
-  if (rules.length && rules.every((x) => [6, 8, 12].includes(x))) s -= 1;
-  return s >= 2 ? "supportive" : s <= -1 ? "demanding" : "mixed";
+  if (x.combust) s -= 1;
+  if (NATURE[p] === "benefic") s += 1;
+  const r = ruled(c, p);
+  if (r.some((n) => [5, 9].includes(n))) s += 1;
+  if (r.length && r.every((n) => [6, 8, 12].includes(n))) s -= 1;
+  return s;
+}
+const toneOf = (c: ChartResult, p: Planet): Tone => { const q = quality(c, p); return q >= 2 ? "supportive" : q <= -1 ? "demanding" : "mixed"; };
+const ratingTone = (r: Rating): Tone => (r === "strong" ? "supportive" : r === "challenging" ? "demanding" : "mixed");
+
+/** How strongly a planet is tied to an area (0–4.5). */
+function relevance(c: ChartResult, p: Planet, area: AreaKey) {
+  const d = AREA_DEF[area];
+  let r = 0;
+  if (d.houses.includes(houseOf(c, p))) r += 2;
+  r += Math.min(2, ruled(c, p).filter((h) => d.houses.includes(h)).length * 1.25);
+  if (d.karakas.includes(p)) r += 0.75;
+  return Math.min(4.5, r);
 }
 
-function chapterOf(chart: ChartResult, d: DashaPeriod): Chapter {
-  const birth = chart.input.utc;
-  const h = houseOf(chart, d.lord);
-  const rules = ruledHouses(chart, d.lord).filter((x) => x !== h);
-  const t = THEMES[d.lord];
-  const rulesText = rules.length ? `, and it also shapes ${list(rules.map((r) => SHORT[r]))}` : "";
-  const summary = `${d.lord}'s years bring ${t.gist}. In your chart ${d.lord} sits in the area of ${HOUSE[h].area}${rulesText}.`;
-  const focus = [...new Set([...HOUSE[h].areas, ...rules.flatMap((r) => HOUSE[r].areas)])].slice(0, 3).map((a) => AREAS[a].label);
-  return { lord: d.lord, start: Date.parse(d.start) < Date.parse(birth) ? birth : d.start, end: d.end, title: t.title, summary, focus, tone: toneOf(chart, d.lord) };
-}
-
-/** Slow-planet transits read from the Moon sign, in everyday words. */
-function skyNow(t: TransitSummary): { lines: string[]; areaNudges: Partial<Record<AreaKey, number>> } {
-  const get = (p: Planet) => t.placements.find((x) => x.planet === p)!;
-  const jup = get("Jupiter").houseFromMoon, sat = get("Saturn").houseFromMoon, rahu = get("Rahu").houseFromMoon;
-  const lines: string[] = [];
-  const nudges: Partial<Record<AreaKey, number>> = {};
-  const add = (houses: number[], n: number) => houses.forEach((h) => HOUSE[h].areas.forEach((a) => { nudges[a] = (nudges[a] ?? 0) + n; }));
-  if ([2, 5, 7, 9, 11].includes(jup)) { lines.push(`Jupiter, the planet of growth, is in a helpful position for you — it supports ${SHORT[jup]}.`); add([jup], 1); }
-  else lines.push(`Jupiter is in your ${ordinal(jup)} sign from the Moon — growth comes through ${SHORT[jup]}, but it asks for effort rather than luck.`);
-  if (t.sadeSati?.active) { lines.push(`Saturn is passing over your Moon sign (Sade Sati, ${t.sadeSati.phase} phase). It feels heavier and slower, but it rewards patience, discipline and honesty.`); nudges.wellbeing = (nudges.wellbeing ?? 0) - 1; nudges.home = (nudges.home ?? 0) - 1; }
-  else if ([3, 6, 11].includes(sat)) { lines.push("Saturn is in a strong position for you — steady work now brings solid, lasting results."); add([sat], 1); nudges.career = (nudges.career ?? 0) + 1; }
-  else if ([4, 8].includes(sat)) { lines.push(`Saturn is in your ${ordinal(sat)} sign from the Moon, a phase that tests ${sat === 4 ? "peace at home" : "your resilience"} — keep routines simple and don't overcommit.`); add([sat], -1); }
-  else lines.push(`Saturn is in your ${ordinal(sat)} sign from the Moon, slowly shaping ${SHORT[sat]}.`);
-  if ([3, 6, 11].includes(rahu)) { lines.push("Rahu is well placed for ambition — bold, new moves can work if you plan them."); add([rahu], 1); }
-  return { lines, areaNudges: nudges };
-}
-
-function upcoming(chart: ChartResult, t: TransitSummary, now: Date): Upcoming[] {
-  const out: Upcoming[] = [];
-  const act = activePeriods(chart.dasha, now);
-  // next sub-periods (antardashas) within the next ~3 years
-  const subs = chart.dasha.mahadashas.flatMap((m) => m.children ?? []).filter((d) => Date.parse(d.start) > now.getTime() && Date.parse(d.start) < now.getTime() + 3 * 365.25 * 86400000).slice(0, 3);
-  for (const s of subs) {
-    const tone = toneOf(chart, s.lord);
-    out.push({ date: s.start, title: `${s.lord} sub-period begins`, text: `From ${monthYear(s.start)} the focus shifts toward ${THEMES[s.lord].gist}, especially around ${SHORT[houseOf(chart, s.lord)]}.`, tone });
-  }
-  // next main chapter
-  const nextMd = chart.dasha.mahadashas.find((m) => act.mahadasha && Date.parse(m.start) >= Date.parse(act.mahadasha.end));
-  if (nextMd) out.push({ date: nextMd.start, title: `A new life chapter: ${nextMd.lord}`, text: `Around ${year(nextMd.start)} your next major chapter begins — "${THEMES[nextMd.lord].title}".`, tone: toneOf(chart, nextMd.lord) });
-  // slow-planet sign changes
-  for (const ing of t.ingresses.filter((i) => i.planet !== "Mars")) {
-    const toIdx = SIGN_INDEX[ing.toSign];
-    if (toIdx === undefined) continue;
-    const h = ((toIdx - chart.moonSign.sign + 12) % 12) + 1;
-    let tone: Tone = "mixed", text = "";
-    if (ing.planet === "Jupiter") { tone = [2, 5, 7, 9, 11].includes(h) ? "supportive" : "mixed"; text = tone === "supportive" ? `Jupiter moves into a lucky position for you — a good window for ${SHORT[h]}.` : `Jupiter shifts focus to ${SHORT[h]}; growth there comes through effort.`; }
-    else if (ing.planet === "Saturn") { tone = [3, 6, 11].includes(h) ? "supportive" : [12, 1, 2, 4, 8].includes(h) ? "demanding" : "mixed"; text = h === 12 ? "Saturn begins Sade Sati for your Moon sign — a slower, more serious 7½-year phase that rewards discipline and patience." : h === 1 ? "Saturn moves over your Moon sign — the most intense part of Sade Sati. Keep routines simple and lean on people you trust." : h === 2 ? "Saturn enters the final phase of Sade Sati — pressure starts to ease; focus on money discipline and kind words at home." : tone === "supportive" ? "Saturn moves into a strong spot for you — patient work starts paying off." : `Saturn moves on to ${SHORT[h]}, asking for responsibility there.`; }
-    else { tone = [3, 6, 11].includes(h) ? "supportive" : "mixed"; text = `Rahu shifts your ambition and restlessness toward ${SHORT[h]}.`; }
-    out.push({ date: ing.at, title: `${ing.planet} enters ${ing.toSign}`, text, tone });
-  }
-  return out.sort((a, b) => Date.parse(a.date) - Date.parse(b.date)).slice(0, 6);
-}
-
-const SIGN_INDEX: Record<string, number> = { Aries: 0, Taurus: 1, Gemini: 2, Cancer: 3, Leo: 4, Virgo: 5, Libra: 6, Scorpio: 7, Sagittarius: 8, Capricorn: 9, Aquarius: 10, Pisces: 11 };
-
-function areaReadings(chart: ChartResult, mdLord: Planet, adLord: Planet | null, nudges: Partial<Record<AreaKey, number>>): AreaReading[] {
-  return (Object.keys(AREAS) as AreaKey[]).map((key) => {
-    const a = AREAS[key];
-    let s = nudges[key] ?? 0;
-    const reasons: string[] = [];
-    for (const [lord, w, label] of [[mdLord, 1.5, "main"], [adLord, 1, "current sub"]] as [Planet | null, number, string][]) {
-      if (!lord) continue;
-      const touches = a.houses.includes(houseOf(chart, lord)) || ruledHouses(chart, lord).some((h) => a.houses.includes(h)) || a.karakas.includes(lord);
-      if (!touches) continue;
-      const tone = toneOf(chart, lord);
-      s += tone === "supportive" ? w : tone === "demanding" ? -w : 0;
-      reasons.push(`your ${label}-period planet ${lord} is linked to it`);
+/** Jupiter / Saturn sign windows from `from` for `years`, by stepping through real ingresses. */
+export function slowSignWindows(from: Date, years = 8): SignWindow[] {
+  const out: SignWindow[] = [];
+  for (const planet of ["Jupiter", "Saturn"] as const) {
+    let t = from, sign = signOf(bodyPosition(planet, from).longitude), start = from.toISOString();
+    const stop = from.getTime() + years * YEAR;
+    for (let guard = 0; guard < 40 && t.getTime() < stop; guard++) {
+      const n = nextIngress(planet, t, 1200);
+      if (!n) break;
+      out.push({ planet, sign, start, end: n.at.toISOString() });
+      sign = n.toSign; start = n.at.toISOString(); t = new Date(n.at.getTime() + 86400000);
     }
-    for (const k of a.karakas) {
-      const pl = placementOf(chart, k);
-      if (pl.dignity === "exalted" || pl.dignity === "own") s += 0.5;
-      if (pl.dignity === "debilitated") s -= 0.5;
-    }
-    const tone: Tone = s >= 1 ? "supportive" : s <= -1 ? "demanding" : "mixed";
-    const lead = tone === "supportive" ? "Looking good right now" : tone === "demanding" ? "Needs extra care right now" : "Steady, with ups and downs";
-    const transit = nudges[key] ?? 0;
-    const why = reasons.length ? reasons[0] : transit > 0 ? "planets moving through the sky right now favour it" : transit < 0 ? "current planetary movements put some pressure here" : "no strong planetary focus on it at the moment";
-    const text = `${lead} — ${why}.`;
-    return { key, label: a.label, tone, text, tip: a.tips[tone] };
-  });
+    out.push({ planet, sign, start, end: new Date(stop).toISOString() });
+  }
+  return out;
 }
 
-export function lifeGuide(chart: ChartResult, transits: TransitSummary, name: string, now = new Date()): LifeGuide | null {
+function areaTimeline(c: ChartResult, area: AreaKey, from: number, to: number, windows: SignWindow[]): Segment[] {
+  const subs = c.dasha.mahadashas.flatMap((m) => (m.children ?? []).map((a) => ({ md: m.lord, ad: a })));
+  const segs: Segment[] = [];
+  const houses = AREA_DEF[area].houses;
+  const fromMoon = (sign: number) => ((sign - c.moonSign.sign + 12) % 12) + 1;
+  const fromLagna = (sign: number) => (c.lagna ? ((sign - c.lagna.sign + 12) % 12) + 1 : null);
+  for (const { md, ad } of subs) {
+    const s = Date.parse(ad.start), e = Date.parse(ad.end);
+    if (e < from || s > to) continue;
+    const rMd = relevance(c, md, area), rAd = relevance(c, ad.lord, area);
+    let act = 0.6 * rMd + rAd;
+    let pol = (0.6 * rMd * Math.sign(quality(c, md)) + rAd * Math.sign(quality(c, ad.lord))) / Math.max(act, 1);
+    // slow transits overlapping this sub-period
+    let jup = false;
+    for (const w of windows) {
+      const ws = Date.parse(w.start), we = Date.parse(w.end);
+      if (we < s || ws > e) continue;
+      const overlap = (Math.min(we, e) - Math.max(ws, s)) / Math.max(1, e - s);
+      if (overlap < 0.3) continue;
+      const hM = fromMoon(w.sign), hL = fromLagna(w.sign);
+      const hits = houses.includes(hM) || (hL !== null && houses.includes(hL));
+      if (w.planet === "Jupiter" && hits) { act += 1; pol += 0.35; jup = true; }
+      if (w.planet === "Saturn" && hits) { act += 0.8; pol += [3, 6, 11].includes(hM) ? 0.2 : -0.3; }
+    }
+    const rating: Rating = act < 1.75 ? "quiet" : act >= 2 && pol >= 0.45 ? "strong" : pol <= -0.2 ? "challenging" : "active";
+    segs.push({ start: new Date(Math.max(s, from)).toISOString(), end: new Date(Math.min(e, to)).toISOString(), rating, md, ad: ad.lord, ...(jup ? { jupiter: true } : {}) });
+  }
+  return segs;
+}
+
+/** Merge adjacent segments with the same rating into readable windows. */
+function mergeWindows(segs: Segment[]) {
+  const out: (Segment & { lords: string[] })[] = [];
+  for (const s of segs) {
+    const last = out[out.length - 1];
+    // merge only within the same main period and up to ~4 years, so windows stay specific
+    if (last && last.rating === s.rating && last.md === s.md && Date.parse(s.end) - Date.parse(last.start) <= 4 * YEAR) { last.end = s.end; last.lords.push(`${s.md}-${s.ad}`); last.jupiter ||= s.jupiter; }
+    else out.push({ ...s, lords: [`${s.md}-${s.ad}`] });
+  }
+  return out;
+}
+
+export function lifeGuide(chart: ChartResult, transits: TransitSummary, name: string, now = new Date(), lang: Lang = "en", windows?: SignWindow[]): LifeGuide | null {
+  const D = DICT[lang];
   const act = activePeriods(chart.dasha, now);
   if (!act.mahadasha) return null;
-  const present = chapterOf(chart, act.mahadasha);
-  const sub = act.antardasha ? chapterOf(chart, act.antardasha) : null;
-  const past = chart.dasha.mahadashas.filter((m) => Date.parse(m.end) <= now.getTime()).map((m) => chapterOf(chart, m));
-  const sky = skyNow(transits);
-  const areas = areaReadings(chart, act.mahadasha.lord, act.antardasha?.lord ?? null, sky.areaNudges);
+  const pn = (p: Planet) => D.planet[p];
+  const list = (xs: string[]) => (xs.length <= 1 ? xs.join("") : `${xs.slice(0, -1).join(", ")} ${D.t.and} ${xs[xs.length - 1]}`);
+  const birth = Date.parse(chart.input.utc);
+  const nowMs = now.getTime();
+  const from = Math.max(birth, nowMs - 12 * YEAR), to = nowMs + 12 * YEAR;
+  const sw = windows ?? slowSignWindows(now, 8);
 
+  const chapterOf = (d: DashaPeriod): Chapter => {
+    const h = houseOf(chart, d.lord);
+    const rules = ruled(chart, d.lord).filter((x) => x !== h);
+    const focus = AREA_KEYS.filter((k) => relevance(chart, d.lord, k) >= 2).slice(0, 3).map((k) => D.area[k]);
+    return {
+      lord: d.lord, name: pn(d.lord), start: Date.parse(d.start) < birth ? chart.input.utc : d.start, end: d.end, title: D.title[d.lord],
+      summary: D.t.chapterSummary(pn(d.lord), D.gist[d.lord], D.house[h], rules.length ? D.t.rulesJoin(list(rules.map((r) => D.house[r]))) : ""),
+      focus, tone: toneOf(chart, d.lord),
+    };
+  };
+
+  const present = chapterOf(act.mahadasha);
+  const sub = act.antardasha ? chapterOf(act.antardasha) : null;
+  const past = chart.dasha.mahadashas.filter((m) => Date.parse(m.end) <= nowMs).map(chapterOf);
+
+  // --- sky now (slow transits from the Moon)
+  const get = (p: Planet) => transits.placements.find((x) => x.planet === p)!;
+  const jup = get("Jupiter").houseFromMoon, sat = get("Saturn").houseFromMoon, rahu = get("Rahu").houseFromMoon;
+  const skyNow: string[] = [];
+  skyNow.push([2, 5, 7, 9, 11].includes(jup) ? D.t.jupGood(D.house[jup]) : D.t.jupOther(ordinal(lang, jup), D.house[jup]));
+  if (transits.sadeSati?.active && transits.sadeSati.phase) skyNow.push(D.t.sadeSati(D.t.phase[transits.sadeSati.phase]));
+  else if ([3, 6, 11].includes(sat)) skyNow.push(D.t.satGood);
+  else if ([4, 8].includes(sat)) skyNow.push(D.t.satHard(ordinal(lang, sat), sat === 4 ? D.t.satHome : D.t.satResilience));
+  else skyNow.push(D.t.satOther(ordinal(lang, sat), D.house[sat]));
+  if ([3, 6, 11].includes(rahu)) skyNow.push(D.t.rahuGood);
+
+  // --- per-area timelines with predictions
+  const areas: AreaReading[] = AREA_KEYS.map((key) => {
+    const timeline = areaTimeline(chart, key, from, to, sw);
+    const cur = timeline.find((s) => Date.parse(s.start) <= nowMs && nowMs < Date.parse(s.end)) ?? timeline[0];
+    const rating: Rating = cur?.rating ?? "quiet";
+    const merged = mergeWindows(timeline);
+    const why = (w: (typeof merged)[number]) => `${w.lords.slice(0, 2).map((l) => D.t.periodOf(pn(l.split("-")[0] as Planet), pn(l.split("-")[1] as Planet))).join(", ")}${w.jupiter ? ` · ${D.t.jupiterWindow(D.area[key])}` : ""}`;
+    const toWin = (w: (typeof merged)[number]): Window => ({ start: w.start, end: w.end, rating: w.rating, text: D.predict[key][w.rating], why: why(w) });
+    const notable = (w: (typeof merged)[number]) => w.rating === "strong" || w.rating === "challenging";
+    const pastW = merged.filter((w) => Date.parse(w.end) <= nowMs && notable(w)).slice(-3).reverse().map(toWin);
+    const nextW = merged.filter((w) => Date.parse(w.start) > nowMs && w.rating !== "quiet").slice(0, 4).map(toWin);
+    return { key, label: D.area[key], tone: ratingTone(rating), rating, text: D.predict[key][rating], tip: D.tip[key][rating === "quiet" ? "active" : rating], timeline, past: pastW, next: nextW };
+  });
+
+  // --- what's coming (life-wide events)
+  const future: Upcoming[] = [];
+  const subs = chart.dasha.mahadashas.flatMap((m) => m.children ?? []).filter((d) => Date.parse(d.start) > nowMs && Date.parse(d.start) < nowMs + 3 * YEAR).slice(0, 3);
+  for (const s of subs) future.push({ date: s.start, title: D.t.subBegins(pn(s.lord)), text: D.t.subText(monthYear(lang, s.start), D.gist[s.lord], D.house[houseOf(chart, s.lord)]), tone: toneOf(chart, s.lord) });
+  const nextMd = chart.dasha.mahadashas.find((m) => Date.parse(m.start) >= Date.parse(act.mahadasha!.end));
+  if (nextMd) future.push({ date: nextMd.start, title: D.t.newChapter(pn(nextMd.lord)), text: D.t.newChapterText(year(nextMd.start), D.title[nextMd.lord]), tone: toneOf(chart, nextMd.lord) });
+  for (const ing of transits.ingresses.filter((i) => i.planet !== "Mars")) {
+    const toIdx = DICT.en.signs.indexOf(ing.toSign);
+    if (toIdx < 0) continue;
+    const h = ((toIdx - chart.moonSign.sign + 12) % 12) + 1;
+    let tone: Tone = "mixed", text: string;
+    if (ing.planet === "Jupiter") { tone = [2, 5, 7, 9, 11].includes(h) ? "supportive" : "mixed"; text = tone === "supportive" ? D.t.jupEnterGood(D.house[h]) : D.t.jupEnterOther(D.house[h]); }
+    else if (ing.planet === "Saturn") { tone = [3, 6, 11].includes(h) ? "supportive" : [12, 1, 2, 4, 8].includes(h) ? "demanding" : "mixed"; text = h === 12 ? D.t.satEnter12 : h === 1 ? D.t.satEnter1 : h === 2 ? D.t.satEnter2 : tone === "supportive" ? D.t.satEnterGood : D.t.satEnterOther(D.house[h]); }
+    else { tone = [3, 6, 11].includes(h) ? "supportive" : "mixed"; text = D.t.rahuEnter(D.house[h]); }
+    future.push({ date: ing.at, title: D.t.enters(pn(ing.planet), D.signs[toIdx]), text, tone });
+  }
+  future.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+
+  // --- remedies for the planets running life now
   const focus: Planet[] = [act.mahadasha.lord];
   if (act.antardasha && act.antardasha.lord !== act.mahadasha.lord) focus.push(act.antardasha.lord);
   if (transits.sadeSati?.active && !focus.includes("Saturn")) focus.push("Saturn");
   const remedies: Remedy[] = focus.map((p, i) => ({
     planet: p,
-    why: i === 0 ? `${p} runs your current life chapter (until ${year(act.mahadasha!.end)}).` : p === "Saturn" && transits.sadeSati?.active && i === focus.length - 1 && act.antardasha?.lord !== "Saturn" ? "Saturn's Sade Sati is active for your Moon sign." : `${p} colours the current sub-period (until ${monthYear(act.antardasha!.end)}).`,
-    ...REMEDY[p],
+    name: pn(p),
+    why: i === 0 ? D.t.remedyMain(pn(p), year(act.mahadasha!.end)) : p === "Saturn" && transits.sadeSati?.active && act.antardasha?.lord !== "Saturn" ? D.t.remedySadeSati : D.t.remedySub(pn(p), monthYear(lang, act.antardasha!.end)),
+    habits: D.habits[p],
+    traditional: { day: D.day[p], mantra: lang === "hi" ? MANTRA_HI[p] : MANTRA[p], colour: D.colour[p], giving: D.giving[p] },
+    gemstoneNote: `${D.stone[p]} · ${D.t.gemCaution}`,
   }));
 
   const first = name.split(" ")[0];
-  const mood = present.tone === "supportive" ? "a generally supportive" : present.tone === "demanding" ? "a demanding but character-building" : "a mixed, growth-oriented";
-  const headline = `${first}, you're in ${mood} chapter: "${present.title}" (${year(present.start)}–${year(present.end)}).${sub ? ` Right now ${sub.lord} adds a flavour of ${THEMES[sub.lord].gist.split(",")[0]} until ${monthYear(sub.end)}.` : ""}`;
+  const headline = D.t.headline(first, D.t.mood[present.tone], present.title, year(present.start), year(present.end)) + (sub ? D.t.headlineSub(sub.name, D.gist[sub.lord].split(",")[0], monthYear(lang, sub.end)) : "");
 
   return {
-    name: first,
-    headline,
-    past,
-    present: { chapter: present, sub, skyNow: sky.lines },
-    future: upcoming(chart, transits, now),
-    areas,
-    remedies,
+    lang, name: first, headline, past, present: { chapter: present, sub, skyNow }, future: future.slice(0, 6), areas, remedies,
     basis: chart.lagna ? "lagna" : "moon",
-    caveat: chart.confidence.dashaTimingReliable ? null : "Your birth time is approximate, so dates here can shift by months. The themes still apply.",
+    caveat: chart.confidence.dashaTimingReliable ? null : D.t.caveat,
+    range: { start: new Date(from).toISOString(), end: new Date(to).toISOString() },
   };
 }

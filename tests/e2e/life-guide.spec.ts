@@ -32,7 +32,13 @@ test("life guide explains past, present, future and what to do", async ({ page }
   await expect(page.getByText("Your story in simple words")).toBeVisible();
   await page.getByRole("link", { name: /Open my Life Guide/ }).click();
   await expect(page.getByRole("heading", { name: "My Life Guide" })).toBeVisible();
-  for (const s of ["Your story so far", "Right now", "What's coming", "How each part of life looks now", "What you can do"]) await expect(page.getByRole("heading", { name: s })).toBeVisible();
+  for (const s of ["Your life timeline, area by area", "Right now", "What's coming", "Your story so far", "What you can do"]) await expect(page.getByRole("heading", { name: s })).toBeVisible();
+  for (const a of ["Career & job", "Business & partnerships", "Love & marriage", "Family & home", "Money & wealth", "Luck & fortune"]) await expect(page.getByRole("heading", { name: a })).toBeVisible();
   await expect(page.getByText(/^Om /).first()).toBeVisible();
+  await page.getByRole("link", { name: "हिन्दी" }).click();
+  await expect(page.getByRole("heading", { name: "मेरी जीवन मार्गदर्शिका" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "करियर और नौकरी" })).toBeVisible();
+  await page.getByRole("link", { name: "Hinglish" }).click();
+  await expect(page.getByRole("heading", { name: "Meri Life Guide" })).toBeVisible();
   if (process.env.SHOTS) await page.screenshot({ path: process.env.SHOTS, fullPage: true });
 });
