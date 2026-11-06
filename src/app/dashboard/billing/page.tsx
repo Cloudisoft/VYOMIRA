@@ -1,4 +1,5 @@
 import { requireUser } from "@/server/session";
+import { COMPANY, telHref } from "@/lib/company";
 import { db } from "@/server/db";
 import { balance } from "@/server/billing/entitlements";
 import { getConfig } from "@/server/config";
@@ -77,7 +78,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           {usage.length ? <ul className="space-y-1.5 text-sm text-slate">{usage.map((u) => <li key={u.id} className="flex justify-between"><span>{u.delta < 0 ? "AURA message" : "Unit returned (not charged)"}</span><span>{u.createdAt.toLocaleString("en-GB")}</span></li>)}</ul> : <p className="text-sm text-slate">No usage yet.</p>}
         </Panel>
       </div>
-      <p className="text-xs text-slate/70">Refunds: see our <a className="underline" href="/legal/refunds">refund policy</a>. Need help? support@vyomira.app</p>
+      <p className="text-xs text-slate/70">Refunds: see our <a className="underline" href="/legal/refunds">refund policy</a>. Need help? <a className="underline" href={`mailto:${COMPANY.supportEmail}`}>{COMPANY.supportEmail}</a> · <a className="underline" href={telHref()}>{COMPANY.phone}</a></p>
     </div>
   );
 }

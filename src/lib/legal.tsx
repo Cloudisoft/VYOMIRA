@@ -292,6 +292,7 @@ export const LEGAL: Record<string, LegalDoc> = {
           <li><strong>Organisation:</strong> {C.legalName}</li>
           {C.address && <li><strong>Address:</strong> {C.address}</li>}
           <li><strong>Email:</strong> {mail(C.grievanceEmail)}</li>
+          <li><strong>Phone:</strong> <a href={`tel:${C.phone.replace(/[^+\d]/g, "")}`}>{C.phone}</a> (Mon–Sat, 10:00–19:00 IST)</li>
         </ul>
         <h2>Process</h2>
         <ol>
