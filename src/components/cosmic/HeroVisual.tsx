@@ -25,7 +25,6 @@ function detectWebgl(): boolean {
   try {
     if (sessionStorage.getItem("vy_webgl_failed") === "1") return (cached = false);
   } catch {}
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const desktop = window.matchMedia("(min-width: 768px)").matches;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   let gl = false;
@@ -39,7 +38,7 @@ function detectWebgl(): boolean {
   }
   const lowMem = ((navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 8) < 4;
   const fewCores = (navigator.hardwareConcurrency ?? 8) < 4;
-  return (cached = !reduce && desktop && gl && !conn?.saveData && !lowMem && !fewCores);
+  return (cached = desktop && gl && !conn?.saveData && !lowMem && !fewCores);
 }
 
 /** Chooses WebGL only for capable desktop browsers; everything else gets the CSS planet. */

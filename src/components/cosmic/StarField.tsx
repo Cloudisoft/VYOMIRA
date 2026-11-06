@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 /**
  * Lightweight 2D canvas star field: twinkling stars in three parallax layers, constellation
  * lines that draw in after load, cursor parallax. Pauses when hidden; static under
- * prefers-reduced-motion; density scales down on small screens.
+ * prefers-reduced-motion (slower twinkle, no meteors or parallax); density scales down on small screens.
  */
 const CONSTELLATIONS: [number, number][][] = [
   // original abstract figures (normalized 0..1 coordinates)
@@ -54,7 +54,7 @@ export function StarField({ className, density = 1 }: { className?: string; dens
         const par = [4, 10, 22][s.layer];
         const x = s.x + pointer.x * par;
         const y = s.y + pointer.y * par;
-        const tw = reduce ? 0.8 : 0.55 + 0.45 * Math.sin(el * s.speed + s.phase);
+        const tw = 0.55 + 0.45 * Math.sin(el * s.speed * (reduce ? 0.4 : 1) + s.phase);
         ctx.globalAlpha = tw * (0.45 + s.layer * 0.25);
         ctx.fillStyle = s.hue > 0.92 ? "#F1DCAE" : s.hue > 0.8 ? "#C9B8FF" : "#F4F1FB";
         ctx.beginPath();
@@ -125,7 +125,7 @@ export function StarField({ className, density = 1 }: { className?: string; dens
         }
       }
       ctx.globalAlpha = 1;
-      if (!reduce) raf = requestAnimationFrame(draw);
+      raf = requestAnimationFrame(draw);
     };
 
     const onMove = (e: PointerEvent) => {
@@ -134,7 +134,7 @@ export function StarField({ className, density = 1 }: { className?: string; dens
     };
     const onVis = () => {
       cancelAnimationFrame(raf);
-      if (!document.hidden && !reduce) raf = requestAnimationFrame(draw);
+      if (!document.hidden) raf = requestAnimationFrame(draw);
     };
     resize();
     raf = requestAnimationFrame(draw);

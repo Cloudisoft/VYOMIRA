@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Spotlight } from "@/components/motion/Spotlight";
 import { ScrollProgress } from "@/components/motion/ScrollProgress";
 import { SmoothScroll } from "@/components/motion/SmoothScroll";
+import { CursorGlow } from "@/components/motion/CursorGlow";
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,6 +11,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <SmoothScroll />
       <ScrollProgress />
       <Spotlight />
+      <CursorGlow />
       <Navbar />
       <main id="main">{children}</main>
       <Footer />

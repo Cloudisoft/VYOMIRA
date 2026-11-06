@@ -40,7 +40,7 @@ export function CosmicTimeline({ sample }: { sample: SampleData }) {
         <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {slow.map((p, i) => (
             <Reveal key={p.planet} delay={i * 0.08}>
-              <div className="glass rounded-2xl p-5">
+              <div data-tilt className="glass rounded-2xl p-5">
                 <p className="text-xs tracking-[0.25em] text-slate uppercase">Transit today</p>
                 <p className="mt-2 font-display text-2xl">{p.planet} <span className="text-slate">in</span> {p.signName}</p>
                 <p className="mt-1 text-sm text-slate">{p.degree.toFixed(1)}° · {p.nakshatra}{p.retrograde && p.planet !== "Rahu" && p.planet !== "Ketu" ? " · retrograde" : ""}</p>

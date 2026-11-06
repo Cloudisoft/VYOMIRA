@@ -159,12 +159,12 @@ function Planet({ reduce }: { reduce: boolean }) {
     const t = state.clock.elapsedTime;
     // scroll-linked spin: velocity of the page adds a decaying boost
     const sy = window.scrollY;
-    spinBoost.current = Math.min(2.5, spinBoost.current * 0.92 + Math.abs(sy - lastScroll.current) * 0.004);
+    spinBoost.current = reduce ? 0 : Math.min(2.5, spinBoost.current * 0.92 + Math.abs(sy - lastScroll.current) * 0.004);
     lastScroll.current = sy;
-    const speed = reduce ? 0 : 0.11 + spinBoost.current * 0.6;
+    const speed = reduce ? 0.05 : 0.11 + spinBoost.current * 0.6;
     if (surface.current) surface.current.rotation.y += dt * speed;
     if (clouds.current) clouds.current.rotation.y += dt * speed * 1.35;
-    if (dust.current) dust.current.rotation.y += dt * (reduce ? 0 : 0.035 + spinBoost.current * 0.1);
+    if (dust.current) dust.current.rotation.y += dt * (reduce ? 0.015 : 0.035 + spinBoost.current * 0.1);
     if (planetMat.current) planetMat.current.uniforms.uTime.value = t;
     if (cloudMat.current) cloudMat.current.uniforms.uTime.value = t;
     if (root.current) {

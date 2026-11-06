@@ -1,10 +1,10 @@
 "use client";
 import { useEffect } from "react";
 
-/** Moves a soft light under the cursor on every `.glass` card (CSS vars --mx/--my). One listener, rAF-throttled. */
+/** Moves a soft light under the cursor on every `.glass` card (CSS vars --mx/--my) and tilts cards marked `data-tilt`. One listener, rAF-throttled. */
 export function Spotlight() {
   useEffect(() => {
-    if (window.matchMedia("(hover: none), (prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(hover: none)").matches) return;
     let raf = 0;
     let last: HTMLElement | null = null;
     let ev: PointerEvent | null = null;
@@ -12,11 +12,17 @@ export function Spotlight() {
       raf = 0;
       if (!ev) return;
       const el = (ev.target as Element | null)?.closest?.(".glass") as HTMLElement | null;
-      if (last && last !== el) { last.style.removeProperty("--mx"); last.style.removeProperty("--my"); }
+      if (last && last !== el) for (const k of ["--mx", "--my", "--rx", "--ry"]) last.style.removeProperty(k);
       if (el) {
         const r = el.getBoundingClientRect();
-        el.style.setProperty("--mx", `${ev.clientX - r.left}px`);
-        el.style.setProperty("--my", `${ev.clientY - r.top}px`);
+        const px = ev.clientX - r.left, py = ev.clientY - r.top;
+        el.style.setProperty("--mx", `${px}px`);
+        el.style.setProperty("--my", `${py}px`);
+        if (el.hasAttribute("data-tilt")) {
+          const k = Math.min(1, 420 / r.width); // wide cards tilt less
+          el.style.setProperty("--rx", `${((0.5 - py / r.height) * 3 * k).toFixed(2)}deg`);
+          el.style.setProperty("--ry", `${((px / r.width - 0.5) * 4.5 * k).toFixed(2)}deg`);
+        }
       }
       last = el;
     };

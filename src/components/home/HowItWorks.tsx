@@ -1,6 +1,6 @@
 "use client";
 import { useRef } from "react";
-import { motion, useScroll, useTransform, useReducedMotion } from "motion/react";
+import { motion, useScroll, useTransform } from "motion/react";
 import { SectionHeading } from "@/components/ui/Reveal";
 
 const STEPS = [
@@ -12,7 +12,6 @@ const STEPS = [
 
 export function HowItWorks() {
   const ref = useRef<HTMLDivElement>(null);
-  const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start 75%", "end 55%"] });
   const len = useTransform(scrollYProgress, [0, 1], [0, 1]);
   return (
@@ -22,9 +21,9 @@ export function HowItWorks() {
         <div ref={ref} className="relative mt-16">
           <svg className="absolute top-0 left-[19px] h-full w-2 md:left-0 md:top-[27px] md:h-2 md:w-full" preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden>
             <line x1="1" y1="0" x2="1" y2="100" stroke="rgba(165,139,255,.2)" strokeWidth="2" vectorEffect="non-scaling-stroke" className="md:hidden" />
-            <motion.line x1="1" y1="0" x2="1" y2="100" stroke="#D8B477" strokeWidth="2" vectorEffect="non-scaling-stroke" style={{ pathLength: reduce ? 1 : len }} className="md:hidden" />
+            <motion.line x1="1" y1="0" x2="1" y2="100" stroke="#D8B477" strokeWidth="2" vectorEffect="non-scaling-stroke" style={{ pathLength: len }} className="md:hidden" />
             <line x1="0" y1="1" x2="100" y2="1" stroke="rgba(165,139,255,.2)" strokeWidth="2" vectorEffect="non-scaling-stroke" className="hidden md:block" />
-            <motion.line x1="0" y1="1" x2="100" y2="1" stroke="#D8B477" strokeWidth="2" vectorEffect="non-scaling-stroke" style={{ pathLength: reduce ? 1 : len }} className="hidden md:block" />
+            <motion.line x1="0" y1="1" x2="100" y2="1" stroke="#D8B477" strokeWidth="2" vectorEffect="non-scaling-stroke" style={{ pathLength: len }} className="hidden md:block" />
           </svg>
           <ol className="relative grid gap-10 md:grid-cols-4 md:gap-8">
             {STEPS.map((s, i) => (

@@ -59,7 +59,7 @@ export function Features() {
         <SectionHeading eyebrow="The foundation" title={<>Your Birth. Your Sky. <span className="text-gradient-violet">Your Blueprint.</span></>} intro="Three precise steps turn a date, a time and a place into a chart you can actually inspect — every number traceable, nothing improvised." />
         <div className="mt-16 grid gap-5 md:grid-cols-6 md:grid-rows-2">
           <Reveal className="md:col-span-4 md:row-span-2">
-            <article className="glass group relative h-full overflow-hidden rounded-[2rem] p-8 md:p-10">
+            <article data-tilt className="glass group relative h-full overflow-hidden rounded-[2rem] p-8 md:p-10">
               <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-violet/20 blur-3xl transition-opacity group-hover:opacity-80" />
               <p className="font-display text-7xl text-gold/30">01</p>
               <h3 className="mt-2 text-3xl md:text-4xl">Your Birth</h3>
@@ -68,7 +68,7 @@ export function Features() {
             </article>
           </Reveal>
           <Reveal delay={0.1} className="md:col-span-2">
-            <article className="glass relative h-full overflow-hidden rounded-[2rem] p-7">
+            <article data-tilt className="glass relative h-full overflow-hidden rounded-[2rem] p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-display text-5xl text-gold/30">02</p>
@@ -80,7 +80,7 @@ export function Features() {
             </article>
           </Reveal>
           <Reveal delay={0.2} className="md:col-span-2">
-            <article className="glass relative h-full overflow-hidden rounded-[2rem] p-7">
+            <article data-tilt className="glass relative h-full overflow-hidden rounded-[2rem] p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-display text-5xl text-gold/30">03</p>

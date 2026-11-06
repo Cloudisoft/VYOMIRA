@@ -11,24 +11,30 @@ export function Hero() {
   const ref = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const planetY = useTransform(scrollYProgress, [0, 1], ["0%", "38%"]);
-  const planetScale = useTransform(scrollYProgress, [0, 1], [1, 0.55]);
-  const planetX = useTransform(scrollYProgress, [0, 1], ["0%", "22%"]);
-  const textY = useTransform(scrollYProgress, [0, 1], ["0%", "-18%"]);
+  // Under reduced motion the parallax collapses to zero (same markup, no movement).
+  const m = reduce ? 0 : 1;
+  const planetY = useTransform(scrollYProgress, [0, 1], ["0%", `${38 * m}%`]);
+  const planetScale = useTransform(scrollYProgress, [0, 1], [1, 1 - 0.45 * m]);
+  const planetX = useTransform(scrollYProgress, [0, 1], ["0%", `${22 * m}%`]);
+  const textY = useTransform(scrollYProgress, [0, 1], ["0%", `${-18 * m}%`]);
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   const words = "The universe has a story written in your stars.".split(" ");
 
   return (
     <section ref={ref} className="relative isolate flex min-h-[100svh] items-center overflow-hidden pt-28 pb-16">
       <div className="absolute inset-0 -z-20 bg-[radial-gradient(ellipse_80%_60%_at_70%_40%,rgba(114,86,216,.22),transparent_60%),radial-gradient(ellipse_60%_50%_at_10%_90%,rgba(216,180,119,.08),transparent_60%)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-20 overflow-hidden">
+        <div className="vy-aurora absolute top-[8%] right-[6%] h-[46vw] w-[46vw] rounded-full bg-[radial-gradient(circle,rgba(114,86,216,.28),transparent_65%)] blur-3xl" />
+        <div className="vy-aurora-2 absolute bottom-[-10%] left-[-6%] h-[38vw] w-[38vw] rounded-full bg-[radial-gradient(circle,rgba(216,180,119,.12),transparent_65%)] blur-3xl" />
+      </div>
       <StarField className="absolute inset-0 -z-10 h-full w-full" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-b from-transparent to-navy" />
 
-      <motion.div style={reduce ? undefined : { y: planetY, x: planetX, scale: planetScale }} className="absolute top-1/2 right-[-30%] -z-10 aspect-square w-[120vw] -translate-y-1/2 opacity-45 md:right-[-8%] md:w-[62vw] md:opacity-100 lg:w-[56vw]">
+      <motion.div style={{ y: planetY, x: planetX, scale: planetScale }} className="absolute top-1/2 right-[-30%] -z-10 aspect-square w-[120vw] -translate-y-1/2 opacity-45 md:right-[-8%] md:w-[62vw] md:opacity-100 lg:w-[56vw]">
         <HeroVisual />
       </motion.div>
 
-      <motion.div style={reduce ? undefined : { y: textY, opacity: fade }} className="mx-auto w-full max-w-7xl px-6">
+      <motion.div style={{ y: textY, opacity: fade }} className="mx-auto w-full max-w-7xl px-6">
         <div className="max-w-2xl">
           <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }} className="eyebrow">Vedic astrology · computed from the real sky</motion.p>
           <h1 className="mt-6 text-[2.9rem] leading-[0.98] text-moon sm:text-6xl md:text-7xl lg:text-[5.4rem]">
