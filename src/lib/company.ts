@@ -17,5 +17,8 @@ export const COMPANY = {
   policyVersion: "2026-11-05",
 };
 
+/** WhatsApp chat link for the support number, optionally with a pre-filled message. */
+export const whatsappHref = (text = "Hi VYOMIRA, I have a question.") => `https://wa.me/${COMPANY.phone.replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+
 /** tel: link for the support phone number ("+91 88668 19132" → "tel:+918866819132"). */
 export const telHref = (phone = COMPANY.phone) => `tel:${phone.replace(/[^+\d]/g, "")}`;

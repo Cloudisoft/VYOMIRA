@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { PreviewClient } from "./PreviewClient";
+import { BackHome } from "@/components/layout/BackHome";
+import { WhatsAppButton } from "@/components/support/WhatsAppButton";
 
 export const metadata: Metadata = { title: "Your Kundli", robots: { index: false } };
 
@@ -12,7 +14,9 @@ export default function ChartPreviewPage() {
         <Link href="/" aria-label="VYOMIRA home"><Logo /></Link>
         <Link href="/onboarding" className="text-sm text-slate hover:text-moon">Edit birth details</Link>
       </header>
+      <div className="mx-auto max-w-7xl px-6"><BackHome /></div>
       <PreviewClient />
+      <WhatsAppButton />
     </main>
   );
 }

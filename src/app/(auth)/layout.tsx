@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { StarField } from "@/components/cosmic/StarField";
 import { PlanetFallback } from "@/components/cosmic/PlanetFallback";
+import { BackHome } from "@/components/layout/BackHome";
+import { WhatsAppButton } from "@/components/support/WhatsAppButton";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,10 +21,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </aside>
       <div className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <Link href="/" className="mb-10 inline-block lg:hidden" aria-label="VYOMIRA home"><Logo /></Link>
+          <BackHome className="mb-8" />
+          <Link href="/" className="mb-10 block w-fit lg:hidden" aria-label="VYOMIRA home"><Logo /></Link>
           {children}
         </div>
       </div>
+      <WhatsAppButton />
     </main>
   );
 }

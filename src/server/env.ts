@@ -43,6 +43,8 @@ const schema = z.object({
   AI_MONTHLY_BUDGET_USD: z.coerce.number().default(50),
   // Email
   RESEND_API_KEY: z.string().optional(),
+  /** Private inbox that receives website contact-form messages. Never sent to the browser. */
+  CONTACT_INBOX: z.string().email().optional(),
   EMAIL_FROM: z.string().default("VYOMIRA <hello@vyomira.app>"),
   // Admin bootstrap
   ADMIN_EMAILS: z.string().default(""),

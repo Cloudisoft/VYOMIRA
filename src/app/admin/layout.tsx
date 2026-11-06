@@ -3,7 +3,7 @@ import { requireAdmin } from "@/server/session";
 import { Logo } from "@/components/brand/Logo";
 
 export const metadata = { title: "Admin", robots: { index: false } };
-const NAV = [["/admin", "Overview"], ["/admin/users", "Users"], ["/admin/ai", "AI usage & models"], ["/admin/payments", "Payments"], ["/admin/pricing", "Pricing & flags"], ["/admin/rules", "Rule versions"], ["/admin/feedback", "Feedback"], ["/admin/logs", "Errors & audit"]];
+const NAV = [["/admin", "Overview"], ["/admin/users", "Users"], ["/admin/ai", "AI usage & models"], ["/admin/payments", "Payments"], ["/admin/pricing", "Pricing & flags"], ["/admin/rules", "Rule versions"], ["/admin/enquiries", "Enquiries"], ["/admin/feedback", "Feedback"], ["/admin/logs", "Errors & audit"]];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireAdmin();

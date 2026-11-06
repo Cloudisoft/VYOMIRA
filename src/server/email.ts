@@ -2,7 +2,7 @@ import "server-only";
 import { env } from "./env";
 
 /** Transactional email via Resend's HTTP API. No-ops (and says so) when not configured. */
-export async function sendEmail(to: string, subject: string, html: string): Promise<{ sent: boolean; reason?: string }> {
+export async function sendEmail(to: string, subject: string, html: string, opts: { replyTo?: string } = {}): Promise<{ sent: boolean; reason?: string }> {
   const e = env();
   if (!e.RESEND_API_KEY) {
     if (e.NODE_ENV !== "production") console.info(`[email] RESEND_API_KEY not set — skipped "${subject}"`);
@@ -11,7 +11,7 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${e.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: e.EMAIL_FROM, to, subject, html }),
+    body: JSON.stringify({ from: e.EMAIL_FROM, to, subject, html, ...(opts.replyTo ? { reply_to: opts.replyTo } : {}) }),
   });
   return res.ok ? { sent: true } : { sent: false, reason: `resend-${res.status}` };
 }
