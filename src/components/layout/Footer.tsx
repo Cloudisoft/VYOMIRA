@@ -15,7 +15,11 @@ export function Footer() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div>
-          <Logo showTagline />
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/brand/vyomira-app-logo.png" alt="VYOMIRA app logo" width={48} height={48} className="h-12 w-12 rounded-xl" />
+            <Logo showTagline />
+          </div>
           <p className="mt-6 max-w-xs text-sm leading-relaxed text-slate">Planetary positions computed from real astronomy. Interpretations offered as tradition, never as certainty.</p>
         </div>
         {COLS.map((c) => (

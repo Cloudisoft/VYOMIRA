@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: "VYOMIRA", title: "VYOMIRA — Your Universe. Your Story.", description: "Premium cosmic experience. Transparent Vedic calculations. Personal guidance at an accessible price.", images: ["/brand/vyomira-banner.webp"] },
   twitter: { card: "summary_large_image", images: ["/brand/vyomira-banner.webp"] },
   robots: { index: true, follow: true },
+  icons: { apple: "/brand/vyomira-app-logo.png" },
+  // Google Search Console ownership (HTML tag method): set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION to the content value.
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = { themeColor: "#080D20", colorScheme: "dark", width: "device-width", initialScale: 1 };

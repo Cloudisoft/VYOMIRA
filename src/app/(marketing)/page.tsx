@@ -30,7 +30,7 @@ export default function Home() {
       <Faq />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebApplication", name: "VYOMIRA", applicationCategory: "LifestyleApplication", description: "Vedic birth charts computed from real astronomy with evidence-grounded AI interpretation.", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" } }) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebApplication", name: "VYOMIRA", url: "https://vyomira.cloudisoft.com", image: "https://vyomira.cloudisoft.com/brand/vyomira-app-logo.png", applicationCategory: "LifestyleApplication", description: "Vedic birth charts computed from real astronomy with evidence-grounded AI interpretation.", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" } }) }}
       />
     </>
   );

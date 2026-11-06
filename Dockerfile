@@ -20,6 +20,8 @@ ARG NEXT_PUBLIC_GRIEVANCE_EMAIL
 ARG NEXT_PUBLIC_SUPPORT_EMAIL
 ARG NEXT_PUBLIC_PRIVACY_EMAIL
 ARG NEXT_PUBLIC_GSTIN
+# Google Search Console "HTML tag" verification code (content value only)
+ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
 ENV NEXT_TELEMETRY_DISABLED=1
 # Build-only placeholders: server secrets are injected at runtime, never baked into the image.
 RUN npx prisma generate && \
