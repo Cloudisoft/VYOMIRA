@@ -1,5 +1,6 @@
 import { Hero } from "@/components/home/Hero";
 import { Features } from "@/components/home/Features";
+import { VideoTour } from "@/components/home/VideoTour";
 import { ZodiacWheel } from "@/components/home/ZodiacWheel";
 import { ChartPreview } from "@/components/home/ChartPreview";
 import { AuraPreview } from "@/components/home/AuraPreview";
@@ -17,6 +18,7 @@ export default function Home() {
     <>
       <Hero />
       <Features />
+      <VideoTour />
       <ZodiacWheel />
       <ChartPreview sample={sample} />
       <AuraPreview sample={sample} />
