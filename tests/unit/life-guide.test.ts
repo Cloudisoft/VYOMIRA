@@ -78,3 +78,21 @@ describe("life guide", () => {
     }
   });
 });
+
+import { simpleAnswer } from "@/lib/interpret/simple-answer";
+describe("plain-language AURA answers (no AI model)", () => {
+  it("answers a career question with now, dated windows and what to do — in each language", () => {
+    for (const lang of ["en", "hi", "hinglish"] as const) {
+      const g = lifeGuide(exact, tr, "Asha", now, lang, windows)!;
+      const md = simpleAnswer(g, "career", "How will my career be next year?", lang, { aiOff: true });
+      expect(md).toContain(g.areas.find((a) => a.key === "career")!.text);
+      expect(md).not.toMatch(/occupies the|Mahadasha|Antardasha|rule engine/i);
+      if (lang === "hi") expect(md).toMatch(/[ऀ-ॿ]{10,}/); else expect(md).not.toMatch(/[ऀ-ॿ]/);
+    }
+  });
+  it("routes business / family questions to those areas", () => {
+    const g = lifeGuide(exact, tr, "Asha", now, "en", windows)!;
+    expect(simpleAnswer(g, "general", "Should I start a business?", "en")).toContain("### Business & partnerships");
+    expect(simpleAnswer(g, "general", "How is my family life?", "en")).toContain("### Family & home");
+  });
+});

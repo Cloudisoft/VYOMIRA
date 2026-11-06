@@ -21,7 +21,7 @@ export default async function SettingsPage() {
           </div>
         ) : <Link href="/onboarding" className="btn-primary">Add birth details</Link>}
       </Panel>
-      <SettingsClient aiConsent={ai} marketingConsent={marketing} email={user.email} />
+      <SettingsClient aiConsent={ai} marketingConsent={marketing} email={user.email} language={loaded ? ((loaded.language as "en" | "hi" | "hinglish") ?? "en") : null} />
     </div>
   );
 }

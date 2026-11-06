@@ -116,7 +116,12 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
         </header>
         {(!aiConfigured || !aiConsent) && (
           <p className="mx-6 mt-4 rounded-xl border hairline bg-surface/50 px-4 py-2.5 text-xs text-slate">
-            {!aiConfigured ? "AI language generation isn't configured on this server, so AURA answers with VYOMIRA's rule engine — every statement still comes straight from your chart." : <>AI processing is off, so AURA answers with the rule engine. <Link href="/dashboard/settings" className="text-amethyst underline">Enable in Settings</Link></>}
+            {!aiConfigured ? "AI language generation isn't configured on this server, so AURA answers in plain words from VYOMIRA's timing engine — every statement still comes straight from your chart." : (
+              <span className="flex flex-wrap items-center justify-between gap-3">
+                <span>{lang === "hi" ? "AURA अभी आपकी कुंडली के समय-संकेतों से सरल उत्तर दे रहा है। बातचीत जैसे, व्यक्तिगत उत्तरों के लिए AI व्याख्या चालू करें।" : lang === "hinglish" ? "AURA abhi aapki kundli ki timings se simple jawaab de raha hai. Baat-cheet jaise, personal jawaabon ke liye AI explanation on kijiye." : "AURA is answering from your chart's timings in simple words. For conversational, personalised answers, turn on AI explanations."} <Link href="/legal/privacy" className="underline">{lang === "hi" ? "क्या साझा होता है?" : lang === "hinglish" ? "Kya share hota hai?" : "What's shared?"}</Link></span>
+                <button type="button" onClick={async () => { const r = await fetch("/api/account/consent", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: "ai_processing", granted: true }) }); if (r.ok) router.refresh(); }} className="rounded-full bg-gradient-to-b from-[#ecd3a2] to-[#c39a5c] px-4 py-1.5 text-xs font-semibold text-[#1a1407]">{lang === "hi" ? "AI व्याख्या चालू करें" : lang === "hinglish" ? "AI explanation on kijiye" : "Turn on AI explanations"}</button>
+              </span>
+            )}
           </p>
         )}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6" aria-live="polite">

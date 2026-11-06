@@ -3,7 +3,10 @@ import type { ChartResult } from "@/lib/astro";
 import { transitSummary, type TransitSummary } from "@/lib/astro/transits";
 import { detectTopic, type Topic } from "@/lib/interpret/catalog";
 import { buildEvidence, type EvidencePackage, type Factor, type TimingWindow } from "@/lib/interpret/evidence";
-import { deterministicReading, readingToMarkdown } from "@/lib/interpret/narrative";
+import { deterministicReading } from "@/lib/interpret/narrative";
+import { lifeGuide } from "@/lib/interpret/life-guide";
+import { simpleAnswer } from "@/lib/interpret/simple-answer";
+import { signWindows } from "../sign-windows";
 import { validateText, type Violation } from "@/lib/interpret/validate";
 import { cacheGet, cacheSet } from "../redis";
 import { sha256 } from "../crypto";
@@ -115,11 +118,15 @@ export async function answerQuestion(opts: {
     if (hit) return { ...(JSON.parse(hit) as AuraAnswer), validation: "cached", chargeable: false, tokensIn: 0, tokensOut: 0, costMicros: 0 };
   }
 
+  // Plain-language, predictive answer from the Life Guide engine, in the user's language (no AI model).
+  const windows = await signWindows(now);
+  const guideNow = lifeGuide(opts.chart, transits, "", now, opts.language, windows);
   const fallback = (why?: string): AuraAnswer => {
     const r = deterministicReading(ev, opts.question);
-    const intro = opts.language === "hi" ? "_(यह उत्तर आपकी कुंडली से नियम-आधारित रूप से तैयार किया गया है; AI भाषा मॉडल का उपयोग नहीं हुआ।)_\n\n" : opts.language === "hinglish" ? "_(Yeh answer aapki kundli se rule-based tareeke se bana hai — AI model use nahi hua.)_\n\n" : "_(Prepared by VYOMIRA's rule engine directly from your chart — no AI language model was used.)_\n\n";
+    const body = guideNow ? simpleAnswer(guideNow, ev.topic, opts.question, opts.language, { aiOff: why === "consent" }) : r.summary;
+    const note = why && why !== "consent" ? `\n\n_${why}_` : "";
     return {
-      content: intro + readingToMarkdown(r) + (why ? `\n\n_${why}_` : ""),
+      content: body + note,
       evidence: shapeEvidence(ev),
       generator: r.generator,
       validation: "fallback",
@@ -132,7 +139,7 @@ export async function answerQuestion(opts: {
 
   const provider = llm();
   const aiCfg = await getConfig("ai");
-  if (!provider || !opts.aiConsent) return fallback(!opts.aiConsent && provider ? "You haven't enabled AI processing in Settings, so AURA answered with the rule engine only." : undefined);
+  if (!provider || !opts.aiConsent) return fallback(!opts.aiConsent && provider ? "consent" : undefined);
   if ((await monthSpendMicros()) > aiCfg.monthlyBudgetUsd * 1_000_000) return fallback("AI generation is paused because the monthly AI budget has been reached.");
 
   const model = opts.deep ? aiCfg.modelDeep : aiCfg.modelFast;
