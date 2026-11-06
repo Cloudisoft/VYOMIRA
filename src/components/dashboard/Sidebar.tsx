@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Orbit, CircleDot, Sparkles, CalendarRange, Sun, HeartHandshake, FileText, Bookmark, CreditCard, Settings, Shield, LogOut, Menu, X } from "lucide-react";
+import { Orbit, CircleDot, Sparkles, CalendarRange, Sun, HeartHandshake, FileText, Bookmark, CreditCard, Settings, Shield, LogOut, Menu, X, BookOpen } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/dashboard", label: "My Universe", icon: Orbit },
+  { href: "/dashboard/guide", label: "My Life Guide", icon: BookOpen },
   { href: "/dashboard/kundli", label: "My Kundli", icon: CircleDot },
   { href: "/dashboard/aura", label: "Ask AURA", icon: Sparkles },
   { href: "/dashboard/timeline", label: "Cosmic Timeline", icon: CalendarRange },

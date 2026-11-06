@@ -13,6 +13,7 @@ import { ORDINAL, SIGNIFICATIONS } from "@/lib/interpret/catalog";
 import { NoChart, Panel } from "@/components/dashboard/ui";
 import { AskBox } from "@/components/dashboard/AskBox";
 import { KundliChart } from "@/components/chart/KundliChart";
+import { lifeGuide } from "@/lib/interpret/life-guide";
 
 const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -35,6 +36,7 @@ export default async function Overview() {
   const act = activePeriods(chart.dasha, new Date());
   const today = dailyInsight(chart, tz);
   const week = cosmicCalendar(chart, tz, 7);
+  const guide = lifeGuide(chart, transits, loaded.fullName);
   const slow = transits.placements.filter((p) => ["Jupiter", "Saturn", "Rahu", "Ketu"].includes(p.planet));
 
   return (
@@ -44,6 +46,32 @@ export default async function Overview() {
         <h1 className="text-4xl sm:text-6xl">{greeting(tz)}, {loaded.fullName.split(" ")[0]}.</h1>
         <p className="text-slate">The Moon is in {today.moon.sign} today — {ORDINAL[today.moon.houseFromMoon]} from your natal Moon.</p>
       </header>
+
+      {guide && (
+        <Panel title="Your story in simple words" action={<Link href="/dashboard/guide" className="text-xs text-gold hover:underline">Open my Life Guide →</Link>}>
+          <p className="font-display text-2xl leading-snug text-moon/95">{guide.headline}</p>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <Link href="/dashboard/guide#past" className="rounded-2xl border hairline p-4 transition-colors hover:border-amethyst/40">
+              <p className="text-xs tracking-[0.18em] text-slate uppercase">So far</p>
+              <p className="mt-1 text-sm">{guide.past.length ? guide.past.slice(-2).map((c) => c.title).join(" → ") : "Your first chapter is still unfolding"}</p>
+            </Link>
+            <Link href="/dashboard/guide#now" className="rounded-2xl border border-gold/30 bg-gold/[.04] p-4 transition-colors hover:border-gold/50">
+              <p className="text-xs tracking-[0.18em] text-gold uppercase">Right now</p>
+              <p className="mt-1 text-sm">{guide.present.chapter.title}{guide.present.sub ? `, with a touch of ${guide.present.sub.title.toLowerCase()}` : ""}</p>
+            </Link>
+            <Link href="/dashboard/guide#next" className="rounded-2xl border hairline p-4 transition-colors hover:border-amethyst/40">
+              <p className="text-xs tracking-[0.18em] text-slate uppercase">Coming up</p>
+              <p className="mt-1 text-sm">{guide.future[0] ? `${new Date(guide.future[0].date).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}: ${guide.future[0].title}` : "A steady stretch ahead"}</p>
+            </Link>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {guide.areas.map((a) => (
+              <Link key={a.key} href="/dashboard/guide#areas" className={`rounded-full px-3 py-1 text-xs ${a.tone === "supportive" ? "bg-gold/15 text-gold" : a.tone === "demanding" ? "bg-[#E07A5F]/15 text-[#F0A08A]" : "bg-moon/5 text-slate"}`}>{a.label}: {a.tone === "supportive" ? "good" : a.tone === "demanding" ? "needs care" : "mixed"}</Link>
+            ))}
+            <Link href="/dashboard/guide#do" className="rounded-full bg-violet/20 px-3 py-1 text-xs text-moon">What can I do? →</Link>
+          </div>
+        </Panel>
+      )}
 
       <div className="grid gap-px overflow-hidden rounded-[1.5rem] border hairline bg-[rgba(165,139,255,.14)] sm:grid-cols-2 xl:grid-cols-4">
         {[

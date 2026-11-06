@@ -20,7 +20,8 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
   const [convs, setConvs] = useState<ConvRow[]>([]);
   const [convId, setConvId] = useState<string | null>(params.get("c"));
   const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [q, setQ] = useState("");
+  // ?draft= pre-fills a suggested question (e.g. from the Life Guide) without sending it — sending spends a message
+  const [q, setQ] = useState(() => params.get("draft")?.slice(0, 600) ?? "");
   const [lang, setLang] = useState(defaultLanguage);
   const [busy, setBusy] = useState(false);
   const [bal, setBal] = useState(initialBalance);
