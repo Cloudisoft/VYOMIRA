@@ -9,3 +9,4 @@ playwright-report
 coverage
 src/generated
 .venv
+scripts/video
