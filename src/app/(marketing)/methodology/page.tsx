@@ -4,7 +4,7 @@ import { COMPUTATION_VERSION } from "@/lib/astro/chart";
 import { RULES_VERSION } from "@/lib/interpret/catalog";
 import { YOGA_RULES_VERSION } from "@/lib/astro/yogas";
 
-export const metadata: Metadata = { title: "Methodology", description: "How VYOMIRA computes Vedic charts, which conventions it uses, how it is tested, and how AI is constrained." };
+export const metadata: Metadata = { title: "Methodology — how VYOMIRA calculates your Kundli", description: "How VYOMIRA computes Vedic charts: astronomical ephemeris, Lahiri ayanamsa, whole-sign houses, Vimshottari dasha, testing against Swiss Ephemeris, and how the AI is constrained.", alternates: { canonical: "/methodology" } };
 
 export default function Methodology() {
   return (

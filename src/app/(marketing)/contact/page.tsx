@@ -2,7 +2,7 @@ import { ContentPage } from "@/components/layout/ContentPage";
 import { ContactForm } from "@/components/support/ContactForm";
 import { COMPANY, telHref, whatsappHref } from "@/lib/company";
 
-export const metadata = { title: "Contact & support" };
+export const metadata = { title: "Contact & support", description: "Contact VYOMIRA support by WhatsApp, phone (+91 88668 19132), email or the contact form. We reply within 2 business days.", alternates: { canonical: "/contact" } };
 
 export default function Contact() {
   return (

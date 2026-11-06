@@ -6,7 +6,8 @@ import { COMPANY } from "@/lib/company";
 export function generateStaticParams() { return Object.keys(LEGAL).map((page) => ({ page })); }
 export async function generateMetadata({ params }: { params: Promise<{ page: string }> }) {
   const p = LEGAL[(await params).page];
-  return p ? { title: p.title } : {};
+  const slug = (await params).page;
+  return p ? { title: p.title, alternates: { canonical: `/legal/${slug}` } } : {};
 }
 
 export default async function Legal({ params }: { params: Promise<{ page: string }> }) {

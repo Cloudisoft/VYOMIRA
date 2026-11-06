@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Pricing } from "@/components/home/Pricing";
 import { Faq } from "@/components/home/Faq";
 
-export const metadata: Metadata = { title: "Pricing", description: "Free Vedic Kundli. Starter ₹199 for 10 AURA messages. Cosmic Plus ₹599 for 25 messages and every detailed report. Local currency pricing." };
+export const metadata: Metadata = { title: "Pricing — Free Kundli, AI astrologer from ₹199", description: "Your Vedic Kundli is free forever. Ask AURA, the AI astrologer, with packs from ₹199 (10 messages) or ₹599 (25 messages + reports), or monthly plans from ₹349. Local-currency pricing, cancel anytime.", alternates: { canonical: "/pricing" } };
 
 export default function PricingPage() {
   return (

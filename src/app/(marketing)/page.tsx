@@ -11,6 +11,7 @@ import { Pricing } from "@/components/home/Pricing";
 import { Methodology } from "@/components/home/Methodology";
 import { Faq } from "@/components/home/Faq";
 import { sampleData } from "@/server/sample";
+import { appLd, ldScript } from "@/lib/seo";
 
 export default function Home() {
   const sample = sampleData();
@@ -28,10 +29,7 @@ export default function Home() {
       <Pricing />
       <Methodology />
       <Faq />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@type": "WebApplication", name: "VYOMIRA", url: "https://vyomira.cloudisoft.com", image: "https://vyomira.cloudisoft.com/brand/vyomira-app-logo.png", applicationCategory: "LifestyleApplication", description: "Vedic birth charts computed from real astronomy with evidence-grounded AI interpretation.", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" } }) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={ldScript(appLd())} />
     </>
   );
 }
