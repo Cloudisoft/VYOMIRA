@@ -54,7 +54,9 @@
     color: var(--color-gold);
   }
   .glass {
-    background: linear-gradient(180deg, rgb(18 26 53 / 0.72), rgb(13 18 48 / 0.55));
+    background:
+      radial-gradient(420px circle at var(--mx, -999px) var(--my, -999px), rgb(165 139 255 / 0.11), transparent 45%),
+      linear-gradient(180deg, rgb(18 26 53 / 0.72), rgb(13 18 48 / 0.55));
     border: 1px solid var(--color-line);
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
@@ -75,7 +77,14 @@
     background: linear-gradient(180deg, #ecd3a2, #d8b477 55%, #c39a5c);
     box-shadow: 0 0 0 1px rgb(255 240 210 / 0.35) inset, 0 10px 30px -10px rgb(216 180 119 / 0.55);
     transition: transform 0.3s var(--ease-cosmic), box-shadow 0.3s var(--ease-cosmic), filter 0.3s;
+    position: relative; overflow: hidden; isolation: isolate;
   }
+  .btn-primary::after {
+    content: ""; position: absolute; inset: -2px; z-index: -1; pointer-events: none;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 250 235 / 0.55) 48%, transparent 66%);
+    transform: translateX(-120%); animation: vy-shimmer 5.5s var(--ease-cosmic) 2.4s infinite;
+  }
+  .btn-primary:hover::after { animation-duration: 1.4s; animation-delay: 0s; }
   .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgb(255 240 210 / 0.5) inset, 0 16px 40px -12px rgb(216 180 119 / 0.75); }
   .btn-primary:disabled { filter: grayscale(0.6) brightness(0.7); cursor: not-allowed; transform: none; }
   .btn-ghost {
@@ -109,6 +118,51 @@
   .prose-legal th, .prose-legal td { border: 1px solid var(--color-line); padding: 0.6rem 0.75rem; text-align: left; vertical-align: top; color: var(--color-slate); }
   .prose-legal th { color: var(--color-moon); font-weight: 600; background: rgb(18 26 53 / 0.6); }
 }
+
+/* ── Motion system ─────────────────────────────────────────────── */
+@keyframes vy-shimmer { 0% { transform: translateX(-120%); } 35%, 100% { transform: translateX(120%); } }
+@keyframes planet-in { from { opacity: 0; transform: scale(0.94); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes vy-slide { to { transform: translateX(-50%); } }
+@keyframes vy-breathe { 0%, 100% { opacity: 0.75; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+@keyframes vy-dash { to { stroke-dashoffset: -56; } }
+@keyframes vy-mx { from { left: -16%; } to { left: 112%; } }
+@keyframes vy-my { from { top: -4%; } to { top: 100%; } }
+@keyframes vy-mz { from { transform: scale(0.7); opacity: 0.55; } to { transform: scale(1.25); opacity: 1; } }
+@keyframes vy-gold-flow { to { background-position: 200% center; } }
+@keyframes vy-fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+.vy-planet { animation: planet-in 1.4s var(--ease-cosmic) both; }
+.vy-surface {
+  background:
+    radial-gradient(ellipse 13% 7% at 28% 63%, rgb(232 207 156 / 0.8), rgb(232 207 156 / 0) 70%),
+    radial-gradient(ellipse 7% 3.5% at 28% 63%, rgb(255 244 220 / 0.6), transparent 70%),
+    radial-gradient(ellipse 24% 4% at 74% 36%, rgb(201 184 255 / 0.5), transparent 70%),
+    radial-gradient(ellipse 32% 3.5% at 12% 23%, rgb(165 139 255 / 0.4), transparent 70%),
+    radial-gradient(ellipse 28% 3% at 58% 80%, rgb(114 86 216 / 0.6), transparent 70%),
+    radial-gradient(ellipse 18% 2.5% at 88% 55%, rgb(216 180 119 / 0.35), transparent 70%),
+    linear-gradient(180deg, #15134a 0%, #241d66 6%, #3d2f96 10%, #5848bd 12%, #2f2680 15%, #1b1858 21%, #2c2378 27%, #4a3aa8 31%, #2a2172 35%, #18154e 42%, #362a8a 48%, #6a58cc 51%, #3a2d8e 54%, #1d1a5a 60%, #2e2579 66%, #4f40ad 70%, #261f6a 75%, #15134a 82%, #2a2172 88%, #3f3199 93%, #15134a 100%);
+  background-size: 50% 100%;
+  filter: blur(1.2px) saturate(1.1);
+  animation: vy-slide 46s linear infinite;
+}
+.vy-clouds {
+  background:
+    radial-gradient(ellipse 30% 3% at 20% 30%, rgb(233 227 245 / 0.35), transparent 70%),
+    radial-gradient(ellipse 22% 2.5% at 64% 58%, rgb(233 227 245 / 0.3), transparent 70%),
+    radial-gradient(ellipse 36% 2% at 80% 74%, rgb(201 184 255 / 0.3), transparent 70%),
+    radial-gradient(ellipse 18% 2% at 42% 44%, rgb(233 227 245 / 0.25), transparent 70%);
+  background-size: 50% 100%;
+  animation: vy-slide 30s linear infinite;
+}
+.vy-breathe { animation: vy-breathe 7s ease-in-out infinite; }
+.vy-ring-dust { animation: vy-dash 9s linear infinite; }
+.vy-orbit > span { animation: vy-mx 13s ease-in-out infinite alternate, vy-my 13s ease-in-out -6.5s infinite alternate, vy-mz 13s ease-in-out -6.5s infinite alternate; }
+.text-gold-flow {
+  background: linear-gradient(100deg, #b98d4f 0%, #f1dcae 25%, #d8b477 50%, #fff3d6 62%, #b98d4f 100%);
+  background-size: 200% auto; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: vy-gold-flow 6s linear infinite;
+}
+.page-enter { animation: vy-fade-up 0.6s var(--ease-cosmic) both; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }

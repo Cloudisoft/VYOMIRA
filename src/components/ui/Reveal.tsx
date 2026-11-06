@@ -7,10 +7,10 @@ export function Reveal({ children, delay = 0, y = 24, className }: { children: R
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { opacity: 0, y }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={reduce ? false : { opacity: 0, y, filter: "blur(6px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.9, delay, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 1, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>
@@ -24,5 +24,35 @@ export function SectionHeading({ eyebrow, title, intro, align = "left" }: { eyeb
       <h2 className="mt-4 text-4xl leading-[1.05] text-moon sm:text-5xl md:text-6xl">{title}</h2>
       {intro && <p className="mt-5 text-lg leading-relaxed text-slate">{intro}</p>}
     </Reveal>
+  );
+}
+
+/** Children wrapped in <StaggerItem> rise in one after another when the group scrolls into view. */
+export function Stagger({ children, className, gap = 0.09 }: { children: ReactNode; className?: string; gap?: number }) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduce ? false : "hidden"}
+      whileInView="show"
+      viewport={{ once: true, margin: "-60px" }}
+      variants={{ hidden: {}, show: { transition: { staggerChildren: gap } } }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+export function StaggerItem({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <motion.div
+      className={className}
+      variants={{
+        hidden: { opacity: 0, y: 22, scale: 0.98, filter: "blur(4px)" },
+        show: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+      }}
+    >
+      {children}
+    </motion.div>
   );
 }

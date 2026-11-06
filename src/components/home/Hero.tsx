@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform, useReducedMotion } from "motion/react"
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { StarField } from "@/components/cosmic/StarField";
 import { HeroVisual } from "@/components/cosmic/HeroVisual";
+import { Magnetic } from "@/components/motion/Magnetic";
 
 export function Hero() {
   const ref = useRef<HTMLElement>(null);
@@ -23,7 +24,7 @@ export function Hero() {
       <StarField className="absolute inset-0 -z-10 h-full w-full" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-b from-transparent to-navy" />
 
-      <motion.div style={reduce ? undefined : { y: planetY, x: planetX, scale: planetScale }} className="absolute top-1/2 right-[-30%] -z-10 aspect-square w-[120vw] -translate-y-1/2 opacity-60 md:right-[-8%] md:w-[62vw] md:opacity-100 lg:w-[56vw]">
+      <motion.div style={reduce ? undefined : { y: planetY, x: planetX, scale: planetScale }} className="absolute top-1/2 right-[-30%] -z-10 aspect-square w-[120vw] -translate-y-1/2 opacity-45 md:right-[-8%] md:w-[62vw] md:opacity-100 lg:w-[56vw]">
         <HeroVisual />
       </motion.div>
 
@@ -34,7 +35,7 @@ export function Hero() {
             {words.map((w, i) => (
               <span key={i}>
                 <motion.span className="inline-block" initial={{ opacity: 0, y: 28, filter: "blur(8px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} transition={{ duration: 1.1, delay: 0.35 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}>
-                  {w === "stars." ? <em className="text-gradient-gold not-italic">{w}</em> : w}
+                  {w === "stars." ? <em className="text-gold-flow not-italic">{w}</em> : w}
                 </motion.span>{i < words.length - 1 ? " " : null}
               </span>
             ))}
@@ -43,9 +44,11 @@ export function Hero() {
             Explore your Vedic birth chart, understand your planetary cycles, and discover guidance shaped around your unique cosmic blueprint.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 1.45 }} className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link href="/onboarding" className="btn-primary group">
-              Reveal My Cosmic Blueprint <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Link>
+            <Magnetic>
+              <Link href="/onboarding" className="btn-primary group w-full sm:w-auto">
+                Reveal My Cosmic Blueprint <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </Magnetic>
             <Link href="#features" className="btn-ghost">Explore the Universe</Link>
           </motion.div>
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 1.8 }} className="mt-8 flex items-start gap-2.5 text-sm text-slate/90">

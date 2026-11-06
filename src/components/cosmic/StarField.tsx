@@ -24,6 +24,9 @@ export function StarField({ className, density = 1 }: { className?: string; dens
     const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
     type Star = { x: number; y: number; r: number; layer: number; phase: number; speed: number; hue: number };
     let stars: Star[] = [];
+    type Meteor = { x: number; y: number; vx: number; vy: number; life: number; max: number };
+    const meteors: Meteor[] = [];
+    let nextMeteor = 2.5;
 
     const resize = () => {
       dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -61,6 +64,37 @@ export function StarField({ className, density = 1 }: { className?: string; dens
           ctx.globalAlpha = (tw - 0.85) * 2;
           ctx.fillRect(x - s.r * 3, y - 0.25, s.r * 6, 0.5);
           ctx.fillRect(x - 0.25, y - s.r * 3, 0.5, s.r * 6);
+        }
+      }
+      // shooting stars: one every ~4–9 s, a short gold-white streak with a fading tail
+      if (!reduce) {
+        if (el > nextMeteor) {
+          const ang = (Math.PI / 180) * (18 + Math.random() * 22);
+          const sp = (w < 768 ? 520 : 820) * (0.8 + Math.random() * 0.5);
+          meteors.push({ x: w * (0.15 + Math.random() * 0.7), y: h * Math.random() * 0.45, vx: -Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: 0.9 + Math.random() * 0.5 });
+          nextMeteor = el + 4 + Math.random() * 5;
+        }
+        const dt = 1 / 60;
+        for (let i = meteors.length - 1; i >= 0; i--) {
+          const m = meteors[i];
+          m.life += dt; m.x += m.vx * dt; m.y += m.vy * dt;
+          const k = m.life / m.max;
+          if (k >= 1) { meteors.splice(i, 1); continue; }
+          const alpha = Math.sin(Math.PI * k);
+          const tail = 0.12;
+          const g = ctx.createLinearGradient(m.x, m.y, m.x - m.vx * tail, m.y - m.vy * tail);
+          g.addColorStop(0, `rgba(255,246,226,${0.95 * alpha})`);
+          g.addColorStop(0.3, `rgba(216,180,119,${0.5 * alpha})`);
+          g.addColorStop(1, "rgba(165,139,255,0)");
+          ctx.globalAlpha = 1;
+          ctx.strokeStyle = g;
+          ctx.lineWidth = 1.3;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y);
+          ctx.lineTo(m.x - m.vx * tail, m.y - m.vy * tail);
+          ctx.stroke();
+          ctx.fillStyle = `rgba(255,250,240,${alpha})`;
+          ctx.beginPath(); ctx.arc(m.x, m.y, 1.4, 0, Math.PI * 2); ctx.fill();
         }
       }
       // constellations draw in over ~3s
