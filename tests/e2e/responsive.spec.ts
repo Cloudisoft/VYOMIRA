@@ -8,7 +8,9 @@ test("homepage works on mobile without horizontal scroll", async ({ page }) => {
   await page.getByRole("button", { name: "Open menu" }).click();
   await expect(page.getByRole("link", { name: "Get Started" })).toBeVisible();
   // Mobile gets the CSS planet, not WebGL
-  expect(await page.locator("canvas").count()).toBeLessThanOrEqual(1);
+  // Phones get 2D canvases only (star field, rotating globe) — never a WebGL context.
+  const all2d = await page.evaluate(() => [...document.querySelectorAll("canvas")].every((c) => c.getContext("2d") !== null));
+  expect(all2d).toBe(true);
 });
 
 test("onboarding is usable on mobile", async ({ page }) => {
