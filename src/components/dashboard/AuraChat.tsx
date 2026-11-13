@@ -13,8 +13,10 @@ interface Msg { id: string; role: "user" | "assistant"; content: string; evidenc
 interface ConvRow { id: string; title: string; updatedAt: string }
 
 const LANGS = [["en", "English"], ["hi", "हिन्दी"], ["hinglish", "Hinglish"]] as const;
+const MODES = [["astrology", "Astrology"], ["numerology", "Numerology"], ["tarot", "Tarot"], ["palmistry", "Palmistry"], ["combined", "Combined"]] as const;
+type Mode = (typeof MODES)[number][0];
 
-export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLanguage }: { initialBalance: number; aiConsent: boolean; aiConfigured: boolean; defaultLanguage: "en" | "hi" | "hinglish" }) {
+export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLanguage, hasChart = true }: { initialBalance: number; aiConsent: boolean; aiConfigured: boolean; defaultLanguage: "en" | "hi" | "hinglish"; hasChart?: boolean }) {
   const params = useSearchParams();
   const router = useRouter();
   const [convs, setConvs] = useState<ConvRow[]>([]);
@@ -23,6 +25,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
   // ?draft= pre-fills a suggested question (e.g. from the Life Guide) without sending it — sending spends a message
   const [q, setQ] = useState(() => params.get("draft")?.slice(0, 600) ?? "");
   const [lang, setLang] = useState(defaultLanguage);
+  const [mode, setMode] = useState<Mode>(() => (MODES.find(([m]) => m === params.get("mode"))?.[0] ?? (hasChart ? "astrology" : "combined")));
   const [busy, setBusy] = useState(false);
   const [bal, setBal] = useState(initialBalance);
   const [error, setError] = useState<{ text: string; upsell?: boolean } | null>(null);
@@ -41,11 +44,11 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
   const openConv = useCallback((id: string | null) => {
     setConvId(id);
     setMsgs([]);
-    if (id) fetch(`/api/conversations/${id}`).then(async (r) => { if (r.ok) setMsgs((await r.json()).conversation.messages); });
+    if (id) fetch(`/api/conversations/${id}`).then(async (r) => { if (r.ok) { const c = (await r.json()).conversation; setMsgs(c.messages); if (c.mode) setMode(c.mode); } });
   }, []);
   useEffect(() => {
     const initial = params.get("c");
-    if (initial) fetch(`/api/conversations/${initial}`).then(async (r) => { if (r.ok) setMsgs((await r.json()).conversation.messages); });
+    if (initial) fetch(`/api/conversations/${initial}`).then(async (r) => { if (r.ok) { const c = (await r.json()).conversation; setMsgs(c.messages); if (c.mode) setMode(c.mode); } });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
@@ -55,7 +58,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
     setBusy(true); setError(null); setQ("");
     setMsgs((m) => [...m, { id: `tmp-${Date.now()}`, role: "user", content: question }, { id: "pending", role: "assistant", content: "", pending: true }]);
     try {
-      const r = await fetch("/api/aura/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, language: lang, conversationId: convId ?? undefined }) });
+      const r = await fetch("/api/aura/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, language: lang, mode, conversationId: convId ?? undefined }) });
       const j = await r.json();
       if (!r.ok) {
         setMsgs((m) => m.filter((x) => x.id !== "pending"));
@@ -70,7 +73,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
       setMsgs((m) => m.filter((x) => x.id !== "pending"));
       setError({ text: "Network error — your message was not charged." });
     } finally { setBusy(false); }
-  }, [busy, lang, convId, router, loadConvs]);
+  }, [busy, lang, mode, convId, router, loadConvs]);
 
   useEffect(() => {
     const pre = params.get("q");
@@ -110,6 +113,7 @@ export function AuraChat({ initialBalance, aiConsent, aiConfigured, defaultLangu
             <div><p className="font-display text-2xl leading-none">AURA</p><p className="text-xs text-slate">Your Cosmic Companion</p></div>
           </div>
           <div className="flex items-center gap-3">
+            <select aria-label="Answer from" value={mode} disabled={Boolean(convId)} title={convId ? "A conversation keeps the mode it started in — start a new one to switch" : undefined} onChange={(e) => setMode(e.target.value as Mode)} className="rounded-full border hairline bg-navy px-3 py-1.5 text-xs text-moon disabled:opacity-60">{MODES.filter(([m]) => hasChart || m !== "astrology").map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
             <select aria-label="Answer language" value={lang} onChange={(e) => setLang(e.target.value as typeof lang)} className="rounded-full border hairline bg-navy px-3 py-1.5 text-xs text-moon">{LANGS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
             <span className="rounded-full bg-gold/10 px-3 py-1.5 text-xs text-gold">{lang === "hi" ? `${bal} शेष` : lang === "hinglish" ? `${bal} bache` : `${bal} left`}</span>
           </div>

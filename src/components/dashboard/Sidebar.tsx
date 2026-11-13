@@ -2,12 +2,12 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Orbit, CircleDot, Sparkles, CalendarRange, Sun, HeartHandshake, FileText, Bookmark, CreditCard, Settings, Shield, LogOut, Menu, X, BookOpen } from "lucide-react";
+import { Orbit, CircleDot, Sparkles, CalendarRange, Sun, HeartHandshake, FileText, Bookmark, CreditCard, Settings, Shield, LogOut, Menu, X, BookOpen, Layers, Combine } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 
-export type NavLabels = { home: string; guide: string; kundli: string; aura: string; timeline: string; daily: string; compat: string; reports: string; saved: string; billing: string; settings: string; admin: string; signOut: string };
+export type NavLabels = { home: string; guide: string; kundli: string; aura: string; timeline: string; daily: string; compat: string; reports: string; readings: string; insights: string; saved: string; billing: string; settings: string; admin: string; signOut: string };
 const NAV = (L: NavLabels) => [
   { href: "/dashboard", label: L.home, icon: Orbit },
   { href: "/dashboard/guide", label: L.guide, icon: BookOpen },
@@ -16,6 +16,8 @@ const NAV = (L: NavLabels) => [
   { href: "/dashboard/timeline", label: L.timeline, icon: CalendarRange },
   { href: "/dashboard/daily", label: L.daily, icon: Sun },
   { href: "/dashboard/compatibility", label: L.compat, icon: HeartHandshake },
+  { href: "/dashboard/readings", label: L.readings, icon: Layers },
+  { href: "/dashboard/insights", label: L.insights, icon: Combine },
   { href: "/dashboard/reports", label: L.reports, icon: FileText },
   { href: "/dashboard/saved", label: L.saved, icon: Bookmark },
   { href: "/dashboard/billing", label: L.billing, icon: CreditCard },

@@ -23,4 +23,5 @@ export const chatSchema = z.object({
   question: z.string().trim().min(3).max(600),
   language: z.enum(["en", "hi", "hinglish"]).default("en"),
   deep: z.boolean().optional(),
+  mode: z.enum(["astrology", "numerology", "tarot", "palmistry", "combined"]).default("astrology"),
 });

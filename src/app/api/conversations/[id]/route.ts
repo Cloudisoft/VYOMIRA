@@ -8,7 +8,7 @@ export const GET = authed<Ctx>("conversation", async (_req, { user, params }) =>
   const { id } = await params;
   const conv = await db.conversation.findFirst({ where: { id, userId: user.id }, include: { messages: { orderBy: { createdAt: "asc" } } } });
   if (!conv) return err(404, "Not found");
-  return json({ conversation: { id: conv.id, title: conv.title, messages: conv.messages.map((m) => ({ id: m.id, role: m.role === "USER" ? "user" : "assistant", content: m.content, evidence: m.evidence, generator: m.generator, validation: m.validation, rating: m.rating, reported: m.reported })) } });
+  return json({ conversation: { id: conv.id, title: conv.title, mode: conv.mode, messages: conv.messages.map((m) => ({ id: m.id, role: m.role === "USER" ? "user" : "assistant", content: m.content, evidence: m.evidence, generator: m.generator, validation: m.validation, rating: m.rating, reported: m.reported })) } });
 });
 
 export const DELETE = authed<Ctx>("conversation-delete", async (_req, { user, params }) => {

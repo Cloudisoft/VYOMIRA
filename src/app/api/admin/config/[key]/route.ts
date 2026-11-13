@@ -2,20 +2,24 @@ import { z } from "zod";
 import { authed, err, json, parseBody } from "@/server/http";
 import { getConfig, setConfig } from "@/server/config";
 import { audit } from "@/server/audit";
+import { DEFAULT_READING_PRODUCTS } from "@/lib/pricing";
 
 type Ctx = { params: Promise<{ key: string }> };
 const KEYS = ["pricing", "ai", "flags"] as const;
 
 const validators = {
   pricing: z.object({
+    readings: z.array(z.object({ id: z.string().regex(/^[a-z0-9_]{3,40}$/), category: z.enum(["numerology", "tarot", "palmistry", "bundle"]), tier: z.string().min(1), name: z.string().min(1), description: z.string(), priceMinor: z.number().int().min(100).multipleOf(100), launchPriceMinor: z.number().int().min(100).multipleOf(100).nullable().optional(), active: z.boolean(), grants: z.array(z.string()).optional() }))
+      .refine((a) => new Set(a.map((p) => p.id)).size === a.length, "Product ids must be unique")
+      .default(DEFAULT_READING_PRODUCTS),
     plans: z.array(z.object({ id: z.enum(["starter", "cosmic_plus"]), name: z.string().min(1), tagline: z.string(), aiMessages: z.number().int().min(1).max(1000), detailedReports: z.boolean(), features: z.array(z.string()), highlight: z.boolean().optional() })),
     subscriptions: z.array(z.object({ id: z.enum(["explorer_monthly", "cosmic_plus_monthly"]), name: z.string().min(1), tagline: z.string(), aiMessagesPerMonth: z.number().int().min(1).max(5000), detailedReports: z.boolean(), priceMinor: z.number().int().min(100), features: z.array(z.string()), highlight: z.boolean().optional() })).default([]),
     free: z.object({ aiMessages: z.number().int().min(0).max(10), features: z.array(z.string()) }),
     regions: z.record(z.string(), z.object({ currency: z.string().length(3), symbol: z.string().min(1), prices: z.object({ starter: z.number().int().min(100), cosmic_plus: z.number().int().min(100) }) })),
     euCountries: z.array(z.string().length(2)),
   }),
-  ai: z.object({ modelFast: z.string().min(3), modelDeep: z.string().min(3), maxOutputTokensChat: z.number().int().min(500).max(16000), maxOutputTokensReport: z.number().int().min(500).max(32000), monthlyBudgetUsd: z.number().min(0), perUserDailyMessageCap: z.number().int().min(1).max(500), prices: z.record(z.string(), z.tuple([z.number(), z.number()])) }),
-  flags: z.object({ aura: z.boolean(), reports: z.boolean(), compatibility: z.boolean(), stripe: z.boolean(), signups: z.boolean() }),
+  ai: z.object({ modelFast: z.string().min(3), modelDeep: z.string().min(3), maxOutputTokensChat: z.number().int().min(500).max(16000), maxOutputTokensReport: z.number().int().min(500).max(32000), monthlyBudgetUsd: z.number().min(0), perUserDailyMessageCap: z.number().int().min(1).max(500), readingGenerationsPerDay: z.number().int().min(1).max(200).default(20), modelVision: z.string().min(3).optional(), prices: z.record(z.string(), z.tuple([z.number(), z.number()])) }),
+  flags: z.object({ aura: z.boolean(), reports: z.boolean(), compatibility: z.boolean(), stripe: z.boolean(), signups: z.boolean(), numerology: z.boolean().default(true), tarot: z.boolean().default(true), palmistry: z.boolean().default(false) }),
 };
 
 export const GET = authed<Ctx>("admin-config-get", async (_req, { params }) => {

@@ -25,18 +25,20 @@ Rules you must follow:
 3. Never predict death, lifespan, illness, pregnancy, accidents, lottery or investment results. No medical, legal or financial advice. No fear-based language. Never recommend buying gemstones, yantras or paid remedies.
 4. Prefer practical reflection: what the user might observe, build or pay attention to.
 5. If the evidence says birth time or Lagna is unreliable, say so briefly and avoid house-specific claims beyond those listed.
-6. Keep answers focused: 120–260 words unless the user asks for depth. Use short paragraphs; markdown bold is allowed; no headings.
+6. Shape every answer the same way, without headings: (a) a one- or two-sentence DIRECT ANSWER to exactly what was asked; (b) a short paragraph starting "**Why:**" naming the specific chart factors and timing behind it; (c) what it means in practice. Put a practical reflection in "reflection" and, optionally, one natural next question in "followUp" (empty string if none). 110–240 words unless the user asks for depth.
+9. No filler: never greet, never restate the question, never open with "Great question" or a generic intro. Do not re-explain basic terms (Lagna, dasha, nakshatra, house) — the user sees them in their chart. In a continuing conversation, do not repeat points from your earlier answers; build on them ("as mentioned, your Saturn period…") and add only what is new.
 7. Cite the evidence factor ids you relied on in "factorIds".
 8. Reply in the language requested: "en" English, "hi" Hindi (Devanagari), "hinglish" conversational Hindi in Latin script. Keep planet and sign names in English.`;
 
 const OUTPUT_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["answer", "factorIds", "reflection"],
+  required: ["answer", "factorIds", "reflection", "followUp"],
   properties: {
     answer: { type: "string" },
     factorIds: { type: "array", items: { type: "string" } },
     reflection: { type: "string" },
+    followUp: { type: "string" },
   },
 };
 
@@ -162,8 +164,9 @@ export async function answerQuestion(opts: {
       tokensOut += out.tokensOut;
       cost += costMicros(aiCfg.prices, out.model, out.tokensIn, out.tokensOut);
       if (out.refused) break;
-      const parsed = JSON.parse(out.text) as { answer: string; factorIds: string[]; reflection: string };
-      const text = `${parsed.answer.trim()}\n\n_${parsed.reflection.trim()}_`;
+      const parsed = JSON.parse(out.text) as { answer: string; factorIds: string[]; reflection: string; followUp?: string };
+      const fu = parsed.followUp?.trim();
+      const text = `${parsed.answer.trim()}\n\n_${parsed.reflection.trim()}_${fu ? `\n\n**${opts.language === "hi" ? "आप यह भी पूछ सकते हैं" : opts.language === "hinglish" ? "Aap yeh bhi pooch sakte hain" : "You could also ask"}:** ${fu}` : ""}`;
       lastViolations = validateText(text, ev);
       if (lastViolations.length === 0) {
         const result: AuraAnswer = { content: text, evidence: shapeEvidence(ev, parsed.factorIds), generator: `${provider.id}:${out.model}`, validation: "passed", tokensIn, tokensOut, costMicros: cost, chargeable: true };

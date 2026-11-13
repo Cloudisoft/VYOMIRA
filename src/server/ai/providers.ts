@@ -14,6 +14,10 @@ export interface GenerateInput {
   messages: { role: "user" | "assistant"; content: string }[];
   maxTokens: number;
   jsonSchema?: Record<string, unknown>;
+  /** Images attached (before the text) to the final user message. Anthropic provider only. */
+  images?: { mediaType: "image/jpeg" | "image/png" | "image/webp"; data: string }[];
+  /** Override reasoning effort (default: low for fast, medium for deep). */
+  effort?: "low" | "medium" | "high";
 }
 export interface GenerateOutput {
   text: string;
@@ -35,9 +39,13 @@ class AnthropicProvider implements LlmProvider {
       model: i.model,
       max_tokens: i.maxTokens,
       system: [{ type: "text", text: i.system, cache_control: { type: "ephemeral" } }],
-      messages: i.messages,
+      messages: i.images?.length
+        ? i.messages.map((m, idx) => (idx === i.messages.length - 1 && m.role === "user"
+          ? { role: "user" as const, content: [...i.images!.map((im) => ({ type: "image" as const, source: { type: "base64" as const, media_type: im.mediaType, data: im.data } })), { type: "text" as const, text: m.content }] }
+          : m))
+        : i.messages,
       // Everyday chat runs at low effort; complex chart explanations at medium.
-      output_config: { effort: i.tier === "fast" ? "low" : "medium", ...(i.jsonSchema ? { format: { type: "json_schema", schema: i.jsonSchema } } : {}) },
+      output_config: { effort: i.effort ?? (i.tier === "fast" ? "low" : "medium"), ...(i.jsonSchema ? { format: { type: "json_schema", schema: i.jsonSchema } } : {}) },
       // Server-side refusal fallback (route by refusal category).
       betas: ["server-side-fallback-2026-07-01"],
       fallbacks: "default",
@@ -51,6 +59,7 @@ class AnthropicProvider implements LlmProvider {
 class OpenAiCompatibleProvider implements LlmProvider {
   id = "openai-compatible";
   async generate(i: GenerateInput): Promise<GenerateOutput> {
+    if (i.images?.length) throw new Error("Image analysis needs the Anthropic provider");
     const e = env();
     const res = await fetch(`${e.OPENAI_COMPAT_BASE_URL ?? "https://api.openai.com/v1"}/chat/completions`, {
       method: "POST",

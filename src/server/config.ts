@@ -9,6 +9,10 @@ export interface AiConfig {
   maxOutputTokensReport: number;
   monthlyBudgetUsd: number;
   perUserDailyMessageCap: number;
+  /** Max reading generations (incl. retries) per user per day. */
+  readingGenerationsPerDay: number;
+  /** Model for palm photo analysis (vision). */
+  modelVision: string;
   /** USD per 1M tokens [input, output] — used for usage accounting only. */
   prices: Record<string, [number, number]>;
 }
@@ -19,6 +23,10 @@ export interface FeatureFlags {
   compatibility: boolean;
   stripe: boolean;
   signups: boolean;
+  numerology: boolean;
+  tarot: boolean;
+  /** Off by default: admins can test palm readings in production before releasing to everyone. */
+  palmistry: boolean;
 }
 
 export const DEFAULT_AI: AiConfig = {
@@ -28,6 +36,8 @@ export const DEFAULT_AI: AiConfig = {
   maxOutputTokensReport: 8000,
   monthlyBudgetUsd: Number(process.env.AI_MONTHLY_BUDGET_USD || 50),
   perUserDailyMessageCap: 40,
+  readingGenerationsPerDay: 20,
+  modelVision: process.env.AI_MODEL_VISION || "claude-opus-5-5",
   prices: {
     "claude-haiku-5-5": [0.1, 0.5],
     "claude-sonnet-5-5": [2, 10],
@@ -35,7 +45,7 @@ export const DEFAULT_AI: AiConfig = {
   },
 };
 
-export const DEFAULT_FLAGS: FeatureFlags = { aura: true, reports: true, compatibility: true, stripe: false, signups: true };
+export const DEFAULT_FLAGS: FeatureFlags = { aura: true, reports: true, compatibility: true, stripe: false, signups: true, numerology: true, tarot: true, palmistry: false };
 
 const DEFAULTS = { pricing: DEFAULT_PRICING, ai: DEFAULT_AI, flags: DEFAULT_FLAGS } as const;
 type Key = keyof typeof DEFAULTS;

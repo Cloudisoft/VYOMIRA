@@ -6,6 +6,7 @@ import { getConfig } from "@/server/config";
 import { hasConsent } from "@/server/consent";
 import { balance, consume, recordTokenUsage, refundUnit } from "@/server/billing/entitlements";
 import { answerQuestion } from "@/server/ai/aura";
+import { answerFromReadings } from "@/server/ai/aura-readings";
 import { guard } from "@/server/ai/guardrails";
 
 export const maxDuration = 60;
@@ -16,11 +17,14 @@ export const POST = authed("aura-chat", async (req, { user }) => {
   const flags = await getConfig("flags");
   if (!flags.aura) return err(503, "AURA is temporarily unavailable.");
   const loaded = await loadChart(user.id);
-  if (!loaded) return err(409, "Create your birth chart first.");
+  if (!loaded && p.data.mode === "astrology") return err(409, "Create your birth chart first.");
 
   // Conversation (scoped to user — no IDOR)
   let conv = p.data.conversationId ? await db.conversation.findFirst({ where: { id: p.data.conversationId, userId: user.id } }) : null;
   if (p.data.conversationId && !conv) return err(404, "Conversation not found");
+  // A conversation keeps the mode it started in.
+  const mode = conv?.mode ?? p.data.mode;
+  if (mode === "astrology" && !loaded) return err(409, "Create your birth chart first.");
   const history = conv
     ? (await db.message.findMany({ where: { conversationId: conv.id }, orderBy: { createdAt: "desc" }, take: 6 })).reverse().map((m) => ({ role: m.role === "USER" ? ("user" as const) : ("assistant" as const), content: m.content.slice(0, 1500) }))
     : [];
@@ -39,9 +43,11 @@ export const POST = authed("aura-chat", async (req, { user }) => {
 
   const bal = await balance(user.id);
   try {
-    const answer = await answerQuestion({
-      chartKey: loaded.chartId,
-      chart: loaded.chart,
+    const answer = mode !== "astrology"
+      ? await answerFromReadings({ userId: user.id, mode: mode as "numerology", question: p.data.question, language: p.data.language, history, aiConsent: await hasConsent(user.id, "ai_processing"), deep: Boolean(p.data.deep) || bal.detailedReports })
+      : await answerQuestion({
+      chartKey: loaded!.chartId,
+      chart: loaded!.chart,
       question: p.data.question,
       language: p.data.language,
       history,
@@ -52,7 +58,7 @@ export const POST = authed("aura-chat", async (req, { user }) => {
       await refundUnit(user.id, entitlementId, "uncharged");
       entitlementId = null;
     }
-    if (!conv) conv = await db.conversation.create({ data: { userId: user.id, chartSnapshotId: loaded.chartId, title: p.data.question.slice(0, 80), language: p.data.language } });
+    if (!conv) conv = await db.conversation.create({ data: { userId: user.id, chartSnapshotId: loaded?.chartId ?? null, title: p.data.question.slice(0, 80), language: p.data.language, mode } });
     await db.message.create({ data: { conversationId: conv.id, role: "USER", content: p.data.question } });
     const msg = await db.message.create({
       data: { conversationId: conv.id, role: "ASSISTANT", content: answer.content, evidence: answer.evidence as never, generator: answer.generator, validation: answer.validation, tokensIn: answer.tokensIn, tokensOut: answer.tokensOut, costMicros: answer.costMicros },

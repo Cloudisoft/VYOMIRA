@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
 
 const LINKS = [
-  { href: "/#features", label: "Features" },
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/#birth-chart", label: "Birth Chart" },
-  { href: "/#aura", label: "AI Astrologer" },
+  { href: "/#birth-chart", label: "Astrology" },
+  { href: "/numerology", label: "Numerology" },
+  { href: "/tarot", label: "Tarot" },
+  { href: "/palmistry", label: "Palmistry" },
+  { href: "/#aura", label: "AURA" },
   { href: "/pricing", label: "Pricing" },
   { href: "/learn", label: "Learn" },
 ];

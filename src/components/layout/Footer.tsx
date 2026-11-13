@@ -3,7 +3,7 @@ import { Logo } from "@/components/brand/Logo";
 import { COMPANY, telHref } from "@/lib/company";
 
 const COLS = [
-  { title: "Product", links: [["Birth Chart", "/onboarding"], ["AURA", "/#aura"], ["Reports", "/#readings"], ["Pricing", "/pricing"]] },
+  { title: "Product", links: [["Birth Chart", "/onboarding"], ["AURA", "/#aura"], ["Numerology", "/numerology"], ["Tarot", "/tarot"], ["Palmistry", "/palmistry"], ["Pricing", "/pricing"]] },
   { title: "Understand", links: [["Learn Jyotish", "/learn"], ["Methodology", "/methodology"], ["FAQ", "/#faq"]] },
   { title: "Trust", links: [["Privacy Notice", "/legal/privacy"], ["Terms of Service", "/legal/terms"], ["Refund Policy", "/legal/refunds"], ["Astrology Disclaimer", "/legal/disclaimer"], ["Cookie Notice", "/legal/cookies"], ["Grievance Redressal", "/legal/grievance"], ["गोपनीयता सूचना", "/legal/privacy-hi"], ["Attributions", "/legal/attributions"]] },
   { title: "Support", links: [["Contact", "/contact"], [COMPANY.supportEmail, `mailto:${COMPANY.supportEmail}`], [COMPANY.phone, telHref()]] },

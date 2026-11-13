@@ -53,6 +53,10 @@ export function appLd() {
       "Guna Milan compatibility (36 points)",
       "Shadbala and Ashtakavarga",
       "PDF reports in English and Hindi",
+      "Numerology reports (Pythagorean and Chaldean) with Lo Shu grid",
+      "Online tarot readings with a secure 78-card draw",
+      "Palm reading from a photo",
+      "Combined Insights across astrology, numerology, palmistry and tarot",
     ],
     offers: [
       { "@type": "Offer", name: "Free Kundli", price: "0", priceCurrency: "INR" },
@@ -60,6 +64,9 @@ export function appLd() {
       { "@type": "Offer", name: "Cosmic Plus — 25 messages and reports", price: "599", priceCurrency: "INR" },
       { "@type": "Offer", name: "Explorer monthly — 50 messages", price: "349", priceCurrency: "INR" },
       { "@type": "Offer", name: "Cosmic Plus monthly — 120 messages", price: "649", priceCurrency: "INR" },
+      { "@type": "Offer", name: "Numerology report", price: "99", priceCurrency: "INR" },
+      { "@type": "Offer", name: "Three-card tarot reading", price: "99", priceCurrency: "INR" },
+      { "@type": "Offer", name: "Self-Discovery Bundle", price: "299", priceCurrency: "INR" },
     ],
   };
 }

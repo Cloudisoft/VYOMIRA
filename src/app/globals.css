@@ -211,3 +211,18 @@
   html:not(.lenis) { scroll-behavior: auto; }
 }
 @keyframes vy-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── Readings: section reveal + tarot 3D flip ── */
+@keyframes vy-reveal-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.reveal-up { animation: vy-reveal-up .6s cubic-bezier(.2,.7,.2,1) both; }
+.flip-scene { perspective: 1100px; }
+.flip-card { position: relative; transform-style: preserve-3d; transition: transform .9s cubic-bezier(.3,.7,.2,1); }
+.flip-card.is-flipped { transform: rotateY(180deg); }
+.flip-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-face.back-side { transform: rotateY(180deg); }
+@keyframes vy-deal { from { opacity: 0; transform: translateY(-24px) rotate(var(--r, 0deg)) scale(.92); } to { opacity: 1; transform: rotate(var(--r, 0deg)); } }
+.deal-in { animation: vy-deal .55s cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-up, .deal-in { animation-duration: .01s; }
+  .flip-card { transition-duration: .25s; }
+}

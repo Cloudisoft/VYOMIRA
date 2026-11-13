@@ -55,6 +55,7 @@ model User {
   conversations Conversation[]
   reports       Report[]
   payments      Payment[]
+  serviceReadings ServiceReading[]
   subscriptions Subscription[]
   entitlements  Entitlement[]
   usage         UsageLedger[]
@@ -255,10 +256,12 @@ model Conversation {
   id              String        @id @default(cuid())
   userId          String
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  chartSnapshotId String
-  chart           ChartSnapshot @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
+  chartSnapshotId String?
+  chart           ChartSnapshot? @relation(fields: [chartSnapshotId], references: [id], onDelete: Cascade)
   title           String
   language        String        @default("en")
+  /// astrology | numerology | tarot | palmistry | combined
+  mode            String        @default("astrology")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -325,6 +328,7 @@ model Payment {
   updatedAt         DateTime      @updatedAt
 
   entitlements Entitlement[]
+  serviceReadings ServiceReading[]
 
   @@index([userId, createdAt])
 }
@@ -464,4 +468,51 @@ model ContactMessage {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Numerology / Tarot / Palmistry readings. Inputs (name, DOB, question) are encrypted at rest.
+model ServiceReading {
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category       String    // numerology | tarot | palmistry
+  productId      String
+  tier           String
+  title          String
+  status         String    // AWAITING_PAYMENT | PAID | GENERATING | READY | FAILED | NEEDS_PHOTO
+  encryptedInput String
+  draw           Json?     // tarot: server-side shuffled deck + chosen cards
+  result         Json?
+  language       String    @default("en")
+  generator      String?
+  error          String?
+  paymentId      String?
+  payment        Payment?  @relation(fields: [paymentId], references: [id])
+  creditId       String?   // entitlement consumed instead of a payment (bundle credit)
+  paidAt         DateTime?
+  generatedAt    DateTime?
+  attempts       Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  images PalmImage[]
+
+  @@index([userId, category, createdAt])
+  @@index([status])
+}
+
+/// Palm photos: resized, re-encoded (metadata stripped) and AES-GCM encrypted. Deletable by the owner.
+model PalmImage {
+  id        String         @id @default(cuid())
+  readingId String
+  reading   ServiceReading @relation(fields: [readingId], references: [id], onDelete: Cascade)
+  side      String         // left | right
+  mime      String
+  width     Int
+  height    Int
+  data      String         // encrypted base64
+  quality   Json?
+  createdAt DateTime       @default(now())
+
+  @@unique([readingId, side])
 }
