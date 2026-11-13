@@ -7,7 +7,10 @@ import { audit } from "../audit";
 import { decryptJson, encryptJson } from "../crypto";
 import { createPayuLink } from "../billing/payu";
 import { chargePrice, type ReadingProduct } from "@/lib/pricing";
-import { shuffleDeck, SPREADS, TAROT_CATEGORY_LABEL, type SpreadId } from "@/lib/readings/tarot";
+import { shuffleDeck, SPREADS, TAROT_CATEGORY_LABEL, spreadName, topicLabel, type SpreadId, type TarotCategory } from "@/lib/readings/tarot";
+import { productText } from "@/lib/readings/ui-strings";
+import { decryptJson as dj } from "../crypto";
+import type { RLang } from "@/lib/readings/lang";
 import { INPUT_SCHEMA, type ReadingInput, type TarotInput } from "./inputs";
 
 export type ReadingStatus = "AWAITING_PAYMENT" | "PAID" | "GENERATING" | "READY" | "FAILED" | "NEEDS_PHOTO";
@@ -47,7 +50,9 @@ export async function createReading(user: { id: string; role: string }, productI
   const parsed = INPUT_SCHEMA[category].safeParse(rawInput);
   if (!parsed.success) return { error: "Please check the details you entered.", status: 422, issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) } as const;
   if (category === "numerology") {
-    const { parseDob } = await import("@/lib/readings/numerology");
+    const { parseDob, numerologyProfile } = await import("@/lib/readings/numerology");
+    try { numerologyProfile({ name: (parsed.data as { name: string }).name, dob: "2000-01-01" }); }
+    catch { return { error: "Please enter your full name in English (A–Z) letters, as it would be spelt on a certificate.", status: 422 } as const; }
     try {
       const d = parseDob((parsed.data as { dob: string }).dob);
       if (d.year < 1900 || new Date(Date.UTC(d.year, d.month - 1, d.day)) > new Date()) throw new Error();
@@ -141,4 +146,13 @@ export function publicReading(r: { id: string; category: string; productId: stri
     createdAt: r.createdAt, paidAt: r.paidAt, generatedAt: r.generatedAt, error: r.error,
     result: r.result, drawn: d?.picks ?? null, input: input ?? null,
   };
+}
+
+/** Reading title in the reader's language (titles are stored in English). */
+export function titleL(r: { category: string; productId: string; tier: string; title: string; encryptedInput: string }, lang: RLang) {
+  if (lang === "en") return r.title;
+  if (r.category === "tarot") {
+    try { const i = dj<TarotInput>(r.encryptedInput); return `${spreadName(r.tier as SpreadId, lang)} — ${topicLabel(i.category as TarotCategory, lang)}`; } catch { return r.title; }
+  }
+  return productText({ id: r.productId, name: r.title, description: "" }, lang).name;
 }

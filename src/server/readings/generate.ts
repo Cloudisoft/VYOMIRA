@@ -6,10 +6,14 @@ import { decryptJson } from "../crypto";
 import { audit, logError } from "../audit";
 import { costMicros, llm } from "../ai/providers";
 import { recordTokenUsage } from "../billing/entitlements";
-import { buildNumerologyReport, NUMEROLOGY_SECTIONS, numerologyFacts, TIER_SECTIONS, type NumerologyTier } from "@/lib/readings/numerology-report";
+import { buildNumerologyReport, NUMEROLOGY_SECTIONS, numerologyFacts, ruleSection, TIER_SECTIONS, type NumerologyTier } from "@/lib/readings/numerology-report";
 import { numerologyProfile } from "@/lib/readings/numerology";
-import { CARD, DECK, SPREADS, suitTheme, TAROT_CATEGORY_LABEL, type DrawnCard, type SpreadId } from "@/lib/readings/tarot";
-import { dedupeReport, READING_DISCLAIMER, type ReportSection } from "@/lib/readings/report";
+import { CARD, DECK, cardMeaning, positionL, spreadName, topicLabel, type DrawnCard, type SpreadId } from "@/lib/readings/tarot";
+import { buildTarotReport, tarotRuleSections, tarotSectionIds } from "@/lib/readings/tarot-report";
+import { dedupeReport, sharesPhrase, type ReportSection } from "@/lib/readings/report";
+import { rs } from "@/lib/readings/strings";
+import { invisibleEverywhere, LINE_FEATURES, LINE_IDS, MOUNT_IDS, PALM_SCOPE, PALM_TIER_IDS, palmObservations, type PalmHand } from "@/lib/readings/palm";
+import { toRLang } from "@/lib/readings/lang";
 import { readInput } from "./service";
 import type { NumerologyInput, PalmistryInput, TarotInput } from "./inputs";
 
@@ -19,6 +23,7 @@ const WRITER_RULES = `You write one section at a time of a personal reading for 
 - Use ONLY the facts provided. Never invent numbers, cards, lines or features.
 - Each section has a SCOPE. Stay inside it. Do not re-introduce the person, the method or earlier sections; refer back briefly ("as your Life Path suggests") instead of restating.
 - No filler intros ("In this section…"), no "In conclusion" outside the summary, no disclaimers (the app adds one at the end), no headings unless asked.
+- Never repeat a sentence or phrase you have used in another section; each section must add something new.
 - Warm, plain, specific language. Short paragraphs. Markdown bold allowed.
 - Never predict death, illness, accidents, pregnancy or financial results; no medical, legal or financial advice; no fear-based language; never sell remedies.
 - Present meanings as traditional interpretation ("traditionally", "often read as"), not certainty.`;
@@ -59,113 +64,78 @@ export function numbersOutsideFacts(text: string, allowed: Set<number>) {
   return (text.match(/\b\d+\b/g) ?? []).map(Number).filter((n) => !allowed.has(n));
 }
 
+/** Accept AI sections only if they add something new: no invented numbers, no phrase shared with earlier text. */
+function acceptSections(order: string[], ai: Record<string, string>, rule: Record<string, string>, ok: (id: string, body: string) => boolean) {
+  const accepted: Record<string, string> = {};
+  const earlier: string[] = [];
+  for (const id of order) {
+    const body = ai[id]?.trim();
+    if (body && ok(id, body) && !sharesPhrase(body, earlier)) { accepted[id] = body; earlier.push(body); }
+    else earlier.push(rule[id] ?? "");
+  }
+  return accepted;
+}
+
 async function generateNumerology(r: { id: string; userId: string; tier: string; language: string; encryptedInput: string }) {
   const input = readInput<NumerologyInput>(r);
+  const lang = toRLang(r.language);
   const tier = r.tier as NumerologyTier;
   const profile = numerologyProfile({ ...input });
-  const facts = numerologyFacts(profile);
+  const facts = numerologyFacts(profile, lang);
   const ai = await getConfig("ai");
-  const writeIds = TIER_SECTIONS[tier].filter((id) => id !== "core" && id !== "loshu"); // exact tables stay rule-generated
+  const order = TIER_SECTIONS[tier];
+  const writeIds = order.filter((id) => id !== "core" && id !== "loshu"); // exact tables stay rule-generated
   const specs = NUMEROLOGY_SECTIONS.filter((s) => writeIds.includes(s.id));
   const res = await callJson<{ sections: { id: string; body: string }[] }>(r.userId, r.id, {
     model: ai.modelFast, tier: "fast", maxTokens: ai.maxOutputTokensReport, schema: SECTIONS_SCHEMA,
     system: WRITER_RULES,
-    user: `Write these sections in ${LANG_NAME[r.language] ?? "English"} for ${profile.name.split(/\s+/)[0]}. Each 60–140 words (summary 40–80).\nSECTIONS:\n${JSON.stringify(specs.map(({ id, title, scope, dependsOn }) => ({ id, title, scope, dependsOn })))}\nFACTS (computed exactly, ${facts.method} method):\n${JSON.stringify(facts)}`,
+    user: `Write these sections in ${LANG_NAME[lang]} for ${profile.name.split(/\s+/)[0]}. Each 60–140 words (summary 40–80).\nSECTIONS:\n${JSON.stringify(specs.map(({ id, title, scope, dependsOn }) => ({ id, title, scope, dependsOn })))}\nFACTS (computed exactly, ${facts.method} method):\n${JSON.stringify(facts)}`,
   });
   const allowed = allowedNumbers(facts);
   [profile.targetYear + 1, profile.targetYear + 2].forEach((y) => allowed.add(y));
-  const write: Record<string, string> = {};
-  for (const s of res?.data.sections ?? []) {
-    if (!writeIds.includes(s.id)) continue;
-    if (numbersOutsideFacts(s.body, allowed).length) continue; // invented a number → use the rule text
-    write[s.id] = s.body;
-  }
-  const doc = buildNumerologyReport({ ...input, tier, targetYear: profile.targetYear }, write);
+  const rule = Object.fromEntries(order.map((id) => [id, ruleSection(id, profile, tier, lang)]));
+  const aiMap = Object.fromEntries((res?.data.sections ?? []).filter((s) => writeIds.includes(s.id)).map((s) => [s.id, s.body]));
+  const write = acceptSections(order, aiMap, rule, (_id, body) => numbersOutsideFacts(body, allowed).length === 0);
+  const doc = buildNumerologyReport({ ...input, tier, targetYear: profile.targetYear, lang }, write);
   return { result: { kind: "numerology", report: doc, profile: { method: profile.method, lifePath: profile.lifePath.value, expression: profile.expression.value, soulUrge: profile.soulUrge.value, personality: profile.personality.value, birthday: profile.birthday.value, personalYear: profile.personalYear, targetYear: profile.targetYear, loShu: profile.loShu } }, generator: Object.keys(write).length ? res!.generator : "rules" };
 }
 
 // ───────────────────────── Tarot ─────────────────────────
 
-const ORIENT = (rev: boolean) => (rev ? "reversed" : "upright");
 const FORBIDDEN_CARD_NAMES = DECK.map((c) => c.name).filter((n) => n.startsWith("The ") || n.includes(" of "));
 
 export function mentionsUndrawnCard(text: string, drawn: string[]) {
   return FORBIDDEN_CARD_NAMES.filter((n) => !drawn.includes(n)).find((n) => text.includes(n)) ?? null;
 }
 
-function tarotRules(cards: DrawnCard[], spread: SpreadId, input: TarotInput) {
-  const pos = SPREADS[spread].positions;
-  const out: Record<string, string> = {};
-  for (const c of cards) {
-    const card = CARD[c.cardId], p = pos.find((x) => x.id === c.position)!;
-    out[c.position] = `In the **${p.label}** position — ${p.meaning} — you drew **${card.name}${c.reversed ? ", reversed" : ""}**. Traditionally this speaks of ${c.reversed ? card.reversed : card.upright}.${card.suit === "major" ? " As a Major Arcana card, it points to a significant theme rather than a passing mood." : ` Its suit relates to ${suitTheme(card.suit)}.`}`;
-  }
-  const majors = cards.filter((c) => CARD[c.cardId].suit === "major").length;
-  const rev = cards.filter((c) => c.reversed).length;
-  const suits = cards.map((c) => CARD[c.cardId].suit).filter((s) => s !== "major");
-  const dom = suits.sort((a, b) => suits.filter((x) => x === b).length - suits.filter((x) => x === a).length)[0];
-  out.overview = `You asked${input.question ? `: “${input.question}”` : ` for ${TAROT_CATEGORY_LABEL[input.category].toLowerCase()}`}. You chose ${cards.length === 1 ? "one card" : `${cards.length} cards`} for the ${SPREADS[spread].name} spread.`;
-  if (cards.length > 1) out.synthesis = [majors >= Math.ceil(cards.length / 2) ? "Several Major Arcana cards suggest this is a meaningful chapter rather than a passing situation." : "Mostly Minor Arcana cards suggest everyday choices shape this more than fate does.", dom ? `The ${dom} suit is strongest, pointing to ${suitTheme(dom)}.` : "", rev > cards.length / 2 ? "Many reversed cards can indicate blocked or internalised energy that needs attention first." : ""].filter(Boolean).join(" ");
-  const g = cards.find((c) => c.position === "guidance") ?? cards[cards.length - 1];
-  out.guidance = g.reversed
-    ? `${CARD[g.cardId].name}, reversed, asks you to notice where ${CARD[g.cardId].reversed.split(",")[0]} may be holding you back. Name one place it shows up this week, and one small step that does the opposite.`
-    : `${CARD[g.cardId].name} invites you to lean into ${CARD[g.cardId].upright.split(",")[0]}. Pick one small action this week that reflects it.`;
-  return out;
-}
-
 async function generateTarot(r: { id: string; userId: string; tier: string; language: string; encryptedInput: string; draw: unknown }) {
   const input = readInput<TarotInput>(r);
+  const lang = toRLang(r.language);
   const spread = r.tier as SpreadId;
   const cards = (r.draw as { picks: DrawnCard[] | null }).picks;
   if (!cards?.length) throw new UserFacingError("Please choose your cards first.");
-  const pos = SPREADS[spread].positions;
-  const facts = cards.map((c) => { const card = CARD[c.cardId], p = pos.find((x) => x.id === c.position)!; return { positionId: p.id, position: p.label, positionMeaning: p.meaning, card: card.name, orientation: ORIENT(c.reversed), traditionalMeaning: c.reversed ? card.reversed : card.upright, arcana: card.suit === "major" ? "Major" : `Minor (${card.suit}, ${card.element})` }; });
-  const ids = ["overview", ...pos.map((p) => p.id), ...(cards.length > 1 ? ["synthesis"] : []), "guidance"];
+  const facts = cards.map((c) => { const card = CARD[c.cardId], p = positionL(spread, c.position, lang); return { positionId: c.position, position: p.label, positionMeaning: p.meaning, card: card.name, orientation: c.reversed ? "reversed" : "upright", traditionalMeaning: cardMeaning(c.cardId, c.reversed, lang), arcana: card.suit === "major" ? "Major" : `Minor (${card.suit}, ${card.element})` }; });
+  const ids = tarotSectionIds(cards);
   const ai = await getConfig("ai");
   const res = await callJson<{ sections: { id: string; body: string }[] }>(r.userId, r.id, {
     model: spread === "celtic" || spread === "five" ? ai.modelDeep : ai.modelFast, tier: spread === "celtic" ? "deep" : "fast", maxTokens: ai.maxOutputTokensReport, schema: SECTIONS_SCHEMA,
-    system: WRITER_RULES + "\n- Interpret ONLY the cards listed, in their stated orientation and position. Mention each card by its exact name in its own section.",
-    user: `Language: ${LANG_NAME[r.language] ?? "English"}. Topic: ${TAROT_CATEGORY_LABEL[input.category]}. Question: ${input.question || "(none — general guidance for this topic)"}.\nSpread: ${SPREADS[spread].name}.\nWrite sections with ids ${JSON.stringify(ids)}:\n- overview: 1–2 sentences framing the question (no card meanings).\n- one section per position id: 60–110 words relating that card in that position to the question.\n${cards.length > 1 ? "- synthesis: how the cards connect, 60–120 words, no re-listing of each card.\n" : ""}- guidance: practical reflection, 40–80 words.\nCARDS DRAWN:\n${JSON.stringify(facts)}`,
+    system: WRITER_RULES + "\n- Interpret ONLY the cards listed, in their stated orientation and position. Mention each card by its exact English name in its own section. Mention a suit's or the Major Arcana's general meaning at most once in the whole reading.",
+    user: `Language: ${LANG_NAME[lang]}. Topic: ${topicLabel(input.category, lang)}. Question: ${input.question || "(none — general guidance for this topic)"}.\nSpread: ${spreadName(spread, lang)}.\nWrite sections with ids ${JSON.stringify(ids)}:\n- overview: 1–2 sentences framing the question (no card meanings).\n- one section per position id: 60–110 words relating that card in that position to the question.\n${cards.length > 1 ? "- synthesis: how the cards connect, 60–120 words, no re-listing of each card.\n" : ""}- guidance: practical reflection, 40–80 words.\nCARDS DRAWN:\n${JSON.stringify(facts)}`,
   });
-  const rule = tarotRules(cards, spread, input);
+  const rule = tarotRuleSections(cards, spread, input, lang);
   const drawnNames = cards.map((c) => CARD[c.cardId].name);
-  const body: Record<string, string> = { ...rule };
-  for (const s of res?.data.sections ?? []) {
-    if (!ids.includes(s.id) || mentionsUndrawnCard(s.body, drawnNames)) continue;
-    const c = cards.find((x) => x.position === s.id);
-    if (c && !s.body.includes(CARD[c.cardId].name)) continue; // must interpret the actual card
-    body[s.id] = s.body;
-  }
-  const sections: ReportSection[] = [
-    { id: "overview", title: "Your Question", body: body.overview },
-    ...cards.map((c) => { const p = pos.find((x) => x.id === c.position)!; return { id: c.position, title: `${p.label} — ${CARD[c.cardId].name}${c.reversed ? " (reversed)" : ""}`, body: body[c.position] }; }),
-    ...(cards.length > 1 ? [{ id: "synthesis", title: "What the Cards Say Together", body: body.synthesis }] : []),
-    { id: "guidance", title: "Practical Reflection", body: body.guidance },
-  ];
-  const doc = dedupeReport({ title: r.tier === "single" ? "Single Card Reading" : SPREADS[spread].name, subtitle: TAROT_CATEGORY_LABEL[input.category], sections, disclaimer: READING_DISCLAIMER.tarot, method: ["78-card deck (Rider–Waite–Smith tradition), upright and reversed meanings.", "The deck was shuffled server-side with a cryptographically secure random number generator; you chose the cards face-down."] });
-  const usedAi = res && sections.some((s) => s.body !== rule[s.id]);
-  return { result: { kind: "tarot", report: doc, cards: cards.map((c) => ({ ...c, name: CARD[c.cardId].name })) }, generator: usedAi ? res!.generator : "rules" };
+  const aiMap = Object.fromEntries((res?.data.sections ?? []).filter((s) => ids.includes(s.id)).map((s) => [s.id, s.body]));
+  const write = acceptSections(ids, aiMap, rule, (id, body) => {
+    if (mentionsUndrawnCard(body, drawnNames)) return false;
+    const c = cards.find((x) => x.position === id);
+    return !c || body.includes(CARD[c.cardId].name); // must interpret the actual card
+  });
+  const doc = buildTarotReport(cards, spread, input, lang, write);
+  return { result: { kind: "tarot", report: doc, cards: cards.map((c) => ({ ...c, name: CARD[c.cardId].name })) }, generator: Object.keys(write).length ? res!.generator : "rules" };
 }
 
 // ───────────────────────── Palmistry ─────────────────────────
 
-const PALM_TIER: Record<string, { id: string; title: string; scope: string }[]> = {
-  basic: [
-    { id: "overview", title: "Palm Overview", scope: "Palm shape and the overall character of the visible major lines." },
-    { id: "personality", title: "Personality", scope: "Temperament traditionally associated with the observed shape, head and heart lines." },
-    { id: "summary", title: "Summary", scope: "3–4 sentences tying the reading together, one practical suggestion." },
-  ],
-};
-PALM_TIER.detailed = [...PALM_TIER.basic.slice(0, 2),
-  { id: "career", title: "Career", scope: "Work style traditionally read from head line, fate/sun lines (only if visible) and mounts observed." },
-  { id: "relationships", title: "Relationships", scope: "Emotional style read from heart line and Venus mount (only if observed)." },
-  { id: "strengths", title: "Strengths", scope: "Strengths suggested by the observed features, without re-describing them." },
-  PALM_TIER.basic[2]];
-PALM_TIER.complete = [...PALM_TIER.detailed.slice(0, 5),
-  { id: "development", title: "Personal Development", scope: "Growth areas and, if both hands were provided, how the non-dominant (inherited) and dominant (developed) hands differ." },
-  PALM_TIER.basic[2]];
-
-const LINE_IDS = ["life", "head", "heart", "fate", "sun", "mercury"] as const;
 const PALM_SCHEMA = {
   type: "object", additionalProperties: false, required: ["usable", "retake", "hands", "sections"],
   properties: {
@@ -175,25 +145,30 @@ const PALM_SCHEMA = {
       side: { type: "string", enum: ["left", "right"] },
       isPalm: { type: "boolean" },
       palmShape: { type: "object", additionalProperties: false, required: ["type", "basis"], properties: { type: { type: "string", enum: ["earth", "air", "fire", "water", "unclear"] }, basis: { type: "string" } } },
-      lines: { type: "array", items: { type: "object", additionalProperties: false, required: ["line", "visibility", "observation"], properties: { line: { type: "string", enum: [...LINE_IDS] }, visibility: { type: "string", enum: ["clear", "faint", "not_visible"] }, observation: { type: "string" } } } },
-      mounts: { type: "array", items: { type: "object", additionalProperties: false, required: ["mount", "observation"], properties: { mount: { type: "string" }, observation: { type: "string" } } } },
+      lines: { type: "array", items: { type: "object", additionalProperties: false, required: ["line", "visibility", "length", "shape", "features", "observation"], properties: {
+        line: { type: "string", enum: [...LINE_IDS] }, visibility: { type: "string", enum: ["clear", "faint", "not_visible"] },
+        length: { type: "string", enum: ["short", "medium", "long", "unclear"] }, shape: { type: "string", enum: ["straight", "curved", "wavy", "unclear"] },
+        features: { type: "array", items: { type: "string", enum: [...LINE_FEATURES] } }, observation: { type: "string" } } } },
+      mounts: { type: "array", items: { type: "object", additionalProperties: false, required: ["mount", "prominence", "observation"], properties: { mount: { type: "string", enum: [...MOUNT_IDS] }, prominence: { type: "string", enum: ["prominent", "average", "flat", "unclear"] }, observation: { type: "string" } } } },
     } } },
     sections: SECTIONS_SCHEMA.properties.sections,
   },
 };
 
-interface PalmAnalysis { usable: boolean; retake: string[]; hands: { side: "left" | "right"; isPalm: boolean; palmShape: { type: string; basis: string }; lines: { line: string; visibility: string; observation: string }[]; mounts: { mount: string; observation: string }[] }[]; sections: { id: string; body: string }[] }
+interface PalmAnalysis { usable: boolean; retake: string[]; hands: PalmHand[]; sections: { id: string; body: string }[] }
 
 export class UserFacingError extends Error {}
 
 async function generatePalmistry(r: { id: string; userId: string; tier: string; language: string; encryptedInput: string }) {
   const input = readInput<PalmistryInput>(r);
+  const lang = toRLang(r.language);
+  const S = rs(lang);
   const images = await db.palmImage.findMany({ where: { readingId: r.id }, orderBy: { side: "asc" } });
   const need = input.hands === "both" ? ["left", "right"] : [input.hands];
   if (need.some((s) => !images.find((i) => i.side === s))) throw new UserFacingError("Please upload your palm photo(s) first.");
   if (!llm()) throw new UserFacingError("Palm analysis is temporarily unavailable. Please try again later.");
   if (!(await hasConsent(r.userId, "ai_processing"))) throw new UserFacingError("Palm readings need your permission for AI photo analysis. Please allow it and try again.");
-  const sections = PALM_TIER[r.tier] ?? PALM_TIER.basic;
+  const ids = PALM_TIER_IDS[r.tier] ?? PALM_TIER_IDS.basic;
   const ai = await getConfig("ai");
   const used = images.filter((i) => need.includes(i.side));
   const res = await callJson<PalmAnalysis>(r.userId, r.id, {
@@ -201,9 +176,9 @@ async function generatePalmistry(r: { id: string; userId: string; tier: string; 
     images: used.map((i) => ({ mediaType: "image/jpeg" as const, data: decryptJson<string>(i.data) })),
     system: `${WRITER_RULES}
 You are also a careful palm-photo analyst. Work in two strictly separate steps:
-1. OBSERVE: for each image (in the order given: ${used.map((i) => i.side).join(", ")}), report only what is actually visible. If the image is not a human palm, is blurry, too dark, cropped, or lines cannot be traced, set usable=false and list concrete retake tips. Mark any line you cannot clearly trace as "not_visible" — never guess or invent a line, break, fork, star or mark. Palm shape is "unclear" if fingers/palm proportions are not visible. Mention only mounts you can actually judge.
-2. INTERPRET: only if usable=true, write the requested sections from the observations using traditional palmistry meanings. Never interpret a line marked not_visible. Never mention lifespan, health or death from the life line.`,
-    user: `Language for observations and sections: ${LANG_NAME[r.language] ?? "English"}. Dominant hand: ${input.dominant}. Hands provided: ${used.map((i) => i.side).join(" and ")}.\nSections to write (ids, titles, scope; 60–130 words each, summary 40–80):\n${JSON.stringify(sections)}`,
+1. OBSERVE: for each image (in the order given: ${used.map((i) => i.side).join(", ")}), report only what is actually visible. If the image is not a human palm, is blurry, too dark, cropped, or lines cannot be traced, set usable=false and list concrete retake tips. For every one of the six lines give visibility, length and shape; mark any line you cannot clearly trace as "not_visible" with length and shape "unclear" — never guess. List a feature (fork, break, chain, island, branch, star, cross, joined_life_line) ONLY if it is unmistakably visible. Give all eight mounts a prominence; use "unclear" when the photo doesn't show it. Palm shape is "unclear" if finger and palm proportions are not visible.
+2. INTERPRET: only if usable=true, write the requested sections from the observations using traditional palmistry meanings. Never interpret a line marked not_visible. Never mention lifespan, health, illness or death from any line. Each section must cover only its scope and add something new.`,
+    user: `Language for observation notes and sections: ${LANG_NAME[lang]}. Dominant hand: ${input.dominant}. Hands provided: ${used.map((i) => i.side).join(" and ")}.\nSections to write (60–130 words each, summary 40–80):\n${JSON.stringify(ids.map((id) => ({ id, title: S.palmSections[id as keyof typeof S.palmSections], scope: PALM_SCOPE[id] })))}`,
   });
   if (!res) throw new UserFacingError("Palm analysis is temporarily unavailable. Please try again in a few minutes.");
   const a = res.data;
@@ -212,21 +187,22 @@ You are also a careful palm-photo analyst. Work in two strictly separate steps:
   if (!a.usable || !anyPalm || traceable < 2) {
     return { needsPhoto: true, result: { kind: "palmistry", retake: a.retake.length ? a.retake : ["We couldn't trace your palm lines clearly. Retake the photo in daylight, palm flat and filling the frame, fingers together and slightly spread, camera directly above."] }, generator: res.generator };
   }
-  const notVisible = new Set(a.hands.flatMap((h) => h.lines.filter((l) => l.visibility === "not_visible").map((l) => l.line)));
-  const visibleAnywhere = new Set(a.hands.flatMap((h) => h.lines.filter((l) => l.visibility !== "not_visible").map((l) => l.line)));
-  const observations = a.hands.map((h) => {
-    const lines = LINE_IDS.map((id) => h.lines.find((l) => l.line === id) ?? { line: id, visibility: "not_visible", observation: "" });
-    return `**${h.side === "left" ? "Left" : "Right"} hand${h.side === input.dominant ? " (dominant)" : ""}** — palm shape: ${h.palmShape.type}${h.palmShape.type !== "unclear" ? ` (${h.palmShape.basis})` : ""}.\n\n${lines.map((l) => `- **${l.line[0].toUpperCase()}${l.line.slice(1)} line:** ${l.visibility === "not_visible" ? "not clearly visible in this photo" : `${l.visibility} — ${l.observation}`}`).join("\n")}${h.mounts.length ? `\n- **Mounts:** ${h.mounts.map((m) => `${m.mount} — ${m.observation}`).join("; ")}` : ""}`;
-  }).join("\n\n");
-  const ids = sections.map((s) => s.id);
-  const body: ReportSection[] = [
-    { id: "observations", title: "What We Can See (observations)", body: observations },
-    ...sections.map((s) => ({ id: s.id, title: s.title, body: a.sections.find((x) => x.id === s.id)?.body ?? "" })).filter((s) => s.body && ids.includes(s.id)),
-  ];
-  // A section that leans on a line that isn't visible anywhere is dropped rather than shown.
-  const cleaned = body.filter((s) => s.id === "observations" || ![...notVisible].filter((l) => !visibleAnywhere.has(l)).some((l) => new RegExp(`\\b${l} line\\b`, "i").test(s.body) && !/not (clearly )?visible|couldn.t|can.t see|unclear/i.test(s.body)));
-  const doc = dedupeReport({ title: "Palm Reading", subtitle: `${r.tier[0].toUpperCase()}${r.tier.slice(1)} · dominant hand: ${input.dominant}`, sections: cleaned, disclaimer: READING_DISCLAIMER.palmistry, method: ["Observations describe only what is visible in your photos. Lines that could not be traced are marked as not visible and are not interpreted.", "Interpretations follow traditional (Western/Indian Hasta Samudrika) palmistry meanings."] });
-  return { needsPhoto: false, result: { kind: "palmistry", report: doc, hands: a.hands }, generator: res.generator };
+  const hidden = invisibleEverywhere(a.hands);
+  const lineWords: Record<string, RegExp> = { life: /life line|जीवन रेखा|jeevan rekha/i, head: /head line|मस्तिष्क रेखा|mastishk rekha/i, heart: /heart line|हृदय रेखा|hriday rekha/i, fate: /fate line|भाग्य रेखा|bhagya rekha/i, sun: /sun line|सूर्य रेखा|surya rekha/i, mercury: /mercury line|बुध रेखा|budh rekha/i };
+  const negation = /not (clearly )?visible|couldn.t|can.t see|unclear|स्पष्ट नहीं|नहीं दिख|saaf nahi|nahi dikh/i;
+  const earlier: string[] = [];
+  const sections: ReportSection[] = [{ id: "observations", title: S.palmSections.observations, body: palmObservations(a.hands, input.dominant, lang) }];
+  for (const id of ids) {
+    const body = a.sections.find((x) => x.id === id)?.body?.trim();
+    if (!body) continue;
+    // Drop a section that interprets a line that isn't visible anywhere, or that repeats earlier text.
+    if (hidden.some((l) => lineWords[l].test(body) && !negation.test(body))) continue;
+    if (sharesPhrase(body, earlier)) continue;
+    earlier.push(body);
+    sections.push({ id, title: S.palmSections[id as keyof typeof S.palmSections], body });
+  }
+  const doc = dedupeReport({ title: S.palmTitle, subtitle: `${S.tier[r.tier] ?? r.tier} · ${S.dominant}: ${input.dominant === "left" ? S.left : S.right}`, sections, disclaimer: S.disclaimer.palmistry, method: S.palmMethod });
+  return { needsPhoto: false, result: { kind: "palmistry", report: doc, hands: a.hands, dominant: input.dominant }, generator: res.generator };
 }
 
 // ───────────────────────── Orchestration ─────────────────────────
@@ -270,4 +246,4 @@ export async function generateReading(readingId: string, userId: string): Promis
   }
 }
 
-export const _test = { tarotRules, allowedNumbers };
+export const _test = { allowedNumbers };

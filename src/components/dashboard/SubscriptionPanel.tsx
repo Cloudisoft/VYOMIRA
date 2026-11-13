@@ -76,7 +76,7 @@ export function SubscriptionPanel({ plans, current, mode, returnSub, returnRenew
           ))}
         </div>
       )}
-      <p className="mt-4 text-[11px] leading-relaxed text-slate/70">Monthly messages refresh each billing period and don't roll over. One-time packs below never expire and are used after your monthly allowance. Cancel anytime; refunds per our <a className="underline" href="/legal/refunds">refund policy</a>.</p>
+      <p className="mt-4 text-[11px] leading-relaxed text-slate/70">Monthly messages refresh each billing period and don't roll over. One-time packs below never expire and are used after your monthly allowance. Cancel anytime. All payments are final — see our <a className="underline" href="/legal/refunds">no-refund policy</a>.</p>
     </section>
   );
 }

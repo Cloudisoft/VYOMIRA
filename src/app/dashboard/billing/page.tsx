@@ -81,7 +81,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
           {usage.length ? <ul className="space-y-1.5 text-sm text-slate">{usage.map((u) => <li key={u.id} className="flex justify-between"><span>{u.delta < 0 ? "AURA message" : "Unit returned (not charged)"}</span><span>{u.createdAt.toLocaleString("en-GB")}</span></li>)}</ul> : <p className="text-sm text-slate">No usage yet.</p>}
         </Panel>
       </div>
-      <p className="text-xs text-slate/70">Refunds: see our <a className="underline" href="/legal/refunds">refund policy</a>. Need help? <a className="underline" href={`mailto:${COMPANY.supportEmail}`}>{COMPANY.supportEmail}</a> · <a className="underline" href={telHref()}>{COMPANY.phone}</a></p>
+      <p className="text-xs text-slate/70">All purchases are final and non-refundable (<a className="underline" href="/legal/refunds">policy</a>). Need help? <a className="underline" href={`mailto:${COMPANY.supportEmail}`}>{COMPANY.supportEmail}</a> · <a className="underline" href={telHref()}>{COMPANY.phone}</a></p>
     </div>
   );
 }

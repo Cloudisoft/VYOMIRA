@@ -59,7 +59,7 @@ export async function Pricing({ compact = false }: { compact?: boolean }) {
             <p className="mx-auto mt-4 max-w-2xl text-center text-xs text-slate/80">Renews monthly via UPI Autopay or card mandate. We notify you before every charge. Monthly messages refresh each period and don't roll over.</p>
           </Reveal>
         )}
-        <p className="mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate/80">Prices include applicable taxes where required. Payments are processed by PayU; we never see or store your card details. A message is one AURA reply; guardrail responses, repeated identical questions and failed generations are never charged. See our <a className="underline" href="/legal/refunds">refund policy</a>.</p>
+        <p className="mx-auto mt-10 max-w-2xl text-center text-xs leading-relaxed text-slate/80">Prices include applicable taxes where required. Payments are processed by PayU; we never see or store your card details. A message is one AURA reply; guardrail responses, repeated identical questions and failed generations are never charged. All purchases are final and non-refundable — see our <a className="underline" href="/legal/refunds">no-refund policy</a>.</p>
       </div>
     </section>
   );

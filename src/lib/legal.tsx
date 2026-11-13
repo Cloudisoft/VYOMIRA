@@ -59,7 +59,7 @@ export const LEGAL: Record<string, LegalDoc> = {
             <tr><td>Create and secure your account</td><td>Account data, security records</td><td>Your consent (s.6 DPDP); contract (Art. 6(1)(b) GDPR)</td></tr>
             <tr><td>Compute and show your chart, readings and reports</td><td>Birth details, chart</td><td>Your explicit consent given when you save a chart</td></tr>
             <tr><td>Let AURA phrase answers with an AI provider</td><td>A compact summary of chart factors and your question — never your name, birth date, time or place</td><td>Separate, optional consent; withdraw any time in Settings</td></tr>
-            <tr><td>Sell and deliver message packs; refunds; tax and accounting</td><td>Purchase records, name, email</td><td>Consent and legitimate uses for compliance with law (s.7 DPDP); contract and legal obligation (GDPR)</td></tr>
+            <tr><td>Sell and deliver packs and readings; payment issues; tax and accounting</td><td>Purchase records, name, email</td><td>Consent and legitimate uses for compliance with law (s.7 DPDP); contract and legal obligation (GDPR)</td></tr>
             <tr><td>Prevent fraud and abuse; keep the service secure</td><td>Security records</td><td>Legitimate uses permitted under s.7 DPDP; legitimate interests (GDPR)</td></tr>
             <tr><td>Product updates by email</td><td>Email</td><td>Optional consent; unsubscribe any time</td></tr>
           </tbody>
@@ -167,7 +167,7 @@ export const LEGAL: Record<string, LegalDoc> = {
     body: (
       <>
         <h2>1. Agreement</h2>
-        <p>These Terms are a contract between you and {entity()} under the Indian Contract Act, 1872 and the Information Technology Act, 2000. By creating an account or purchasing a pack you agree to them, to our <a href="/legal/privacy">Privacy Notice</a> and to our <a href="/legal/refunds">Refund &amp; Cancellation Policy</a>.</p>
+        <p>These Terms are a contract between you and {entity()} under the Indian Contract Act, 1872 and the Information Technology Act, 2000. By creating an account or purchasing a pack you agree to them, to our <a href="/legal/privacy">Privacy Notice</a> and to our <a href="/legal/refunds">No-Refund &amp; Cancellation Policy</a>.</p>
 
         <h2>2. Eligibility and accounts</h2>
         <ul>
@@ -194,7 +194,7 @@ export const LEGAL: Record<string, LegalDoc> = {
         </ul>
 
         <h2>6. Refunds and cancellation</h2>
-        <p>Governed by our <a href="/legal/refunds">Refund &amp; Cancellation Policy</a>, which forms part of these Terms.</p>
+        <p>All purchases are final and non-refundable, as set out in our <a href="/legal/refunds">No-Refund &amp; Cancellation Policy</a>, which forms part of these Terms.</p>
 
         <h2>7. Acceptable use</h2>
         <p>You will not: misuse or attempt to gain unauthorised access to the service or other users’ data; scrape, bulk-query or reverse engineer it, including its rate limits and validation; use it to harass, defraud or discriminate against anyone; resell access; or upload unlawful content. We may suspend accounts that breach this section, with notice where practicable.</p>
@@ -206,7 +206,7 @@ export const LEGAL: Record<string, LegalDoc> = {
         <p>To the extent permitted by law, the service is provided “as is” and “as available”. We work hard to keep calculations accurate (see our <a href="/methodology">Methodology</a>), but we do not warrant that interpretations will be accurate, complete or suitable for any purpose. Nothing in these Terms excludes liability that cannot be excluded under Indian law, including under the Consumer Protection Act, 2019. Subject to that, our total liability arising out of or relating to the service is limited to the amount you paid us in the 12 months before the event giving rise to the claim, and we are not liable for indirect or consequential loss.</p>
 
         <h2>10. Suspension and termination</h2>
-        <p>You may stop using VYOMIRA and delete your account at any time. We may suspend or terminate access for material breach of these Terms or where required by law; if we terminate without cause, we will refund the unused portion of any pack.</p>
+        <p>You may stop using VYOMIRA and delete your account at any time. We may suspend or terminate access for material breach of these Terms or where required by law; if we terminate without cause, we will give you a reasonable opportunity to use or download what you have purchased.</p>
 
         <h2>11. Governing law and disputes</h2>
         <p>These Terms are governed by the laws of India. Please first contact our Grievance Officer — most issues are resolved quickly. Any dispute not resolved within 30 days may be referred to arbitration by a sole arbitrator under the Arbitration and Conciliation Act, 1996, seated in {C.cityForJurisdiction}, conducted in English; subject to that, the courts at {C.cityForJurisdiction} have jurisdiction. Nothing here limits your right as a consumer to approach a Consumer Disputes Redressal Commission or the National Consumer Helpline (1915).</p>
@@ -218,26 +218,29 @@ export const LEGAL: Record<string, LegalDoc> = {
   },
 
   refunds: {
-    title: "Refund & Cancellation Policy",
-    intro: "Clear, consumer-friendly rules for message packs — in line with the Consumer Protection (E-Commerce) Rules, 2020.",
+    title: "No-Refund & Cancellation Policy",
+    intro: "All purchases on VYOMIRA are final. Please read this before you buy — it is shown at checkout and forms part of our Terms (Consumer Protection (E-Commerce) Rules, 2020).",
     body: (
       <>
-        <h2>1. Unused packs — full refund within 7 days</h2>
-        <p>If you have not used any messages from a pack, you may request a full refund within 7 days of purchase.</p>
-        <h2>2. Partly used packs</h2>
-        <p>Within 7 days of purchase, we refund the unused messages pro rata (price ÷ messages × unused messages). Detailed reports already generated from a Cosmic Plus pack are treated as used at ₹99 each.</p>
-        <h2>3. Failed or duplicate transactions</h2>
-        <p>If money was debited but your pack did not activate, or you were charged twice, we refund the full amount whether or not you ask, once confirmed with PayU. Messages that fail to generate are automatically returned to your balance.</p>
-        <h2>4. Service problems</h2>
-        <p>If a feature you paid for is materially unavailable for more than 72 hours, you may request a refund of the unused portion regardless of the 7-day window.</p>
-        <h2>5. How to request</h2>
-        <p>Email {mail(C.supportEmail)} from your account email with your order reference (shown in <em>Billing</em>). We acknowledge within 48 hours and decide within 7 days.</p>
-        <h2>6. Timelines</h2>
-        <p>Approved refunds are initiated within 3 working days to the original payment method through PayU. Banks and card networks typically credit them within 5–7 working days (UPI often sooner). When a refund is processed, unused messages from that pack are removed.</p>
-        <h2>7. Cancellation of monthly plans</h2>
-        <p>Cancel anytime from <em>Billing → Cancel plan</em>. No further charges are made after cancellation and you keep access until the end of the period already paid for. If you cancel within 7 days of your first monthly payment and have used no more than 5 messages, we refund that payment in full. Renewal payments are not refunded once the new period has started, except for failed or duplicate charges (§3). One-time packs never renew. Deleting your account forfeits unused messages unless you request a refund first within the windows above.</p>
-        <h2>8. Your statutory rights</h2>
-        <p>This policy adds to, and does not limit, your rights under the Consumer Protection Act, 2019.</p>
+        <h2>1. All sales are final — no refunds</h2>
+        <p>Message packs, monthly plans, numerology, tarot and palm readings, reports and bundles are digital services delivered to your account immediately. Once a payment is successful, it is not refundable, in whole or in part, including for unused messages, unused credits or a change of mind.</p>
+        <h2>2. What we do instead when something goes wrong</h2>
+        <ul>
+          <li><strong>Generation failed:</strong> if a reading or AURA reply fails, you can retry it free of charge; failed AURA replies are never deducted from your balance.</li>
+          <li><strong>Unclear palm photo:</strong> if a photo isn't clear enough, we ask for a better one and analyse it again at no extra cost.</li>
+          <li><strong>Paid twice for the same reading:</strong> the second payment is automatically kept as a credit of the same reading, usable any time.</li>
+          <li><strong>Feature unavailable:</strong> if a paid feature is unavailable, your purchase stays in your account and can be used once it is restored.</li>
+        </ul>
+        <h2>3. Failed transactions</h2>
+        <p>If money is debited but the payment is not completed (the order shows as failed or pending and nothing is activated), this is not a sale: the amount is reversed automatically by PayU and your bank within the timelines set by the Reserve Bank of India. Contact us with your order reference if it does not arrive.</p>
+        <h2>4. Cancellation of monthly plans</h2>
+        <p>Cancel anytime from <em>Billing → Cancel plan</em>. No further charges are made after cancellation and you keep access until the end of the period already paid for. Payments already made are not refunded. One-time packs and readings never renew.</p>
+        <h2>5. Account deletion</h2>
+        <p>Deleting your account permanently removes unused messages, credits and readings. They cannot be restored or refunded.</p>
+        <h2>6. Contact</h2>
+        <p>Questions about a payment: {mail(C.supportEmail)} with your order reference (shown in <em>Billing</em> or <em>My Readings</em>). We respond within 48 hours.</p>
+        <h2>7. Your statutory rights</h2>
+        <p>Nothing in this policy limits rights you have under the Consumer Protection Act, 2019 that cannot be excluded by contract.</p>
       </>
     ),
   },

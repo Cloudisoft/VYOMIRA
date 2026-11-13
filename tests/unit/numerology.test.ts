@@ -76,7 +76,7 @@ describe("numerology: full profile", () => {
     expect(p.conventions[0]).toMatch(/Chaldean/);
   });
   it("Chaldean does not keep master numbers for names", () => {
-    const p = numerologyProfile({ name: "Kkkkkkkkkkk", dob: "1990-07-15", method: "chaldean" }); // 11 × 2 = 22
+    const p = numerologyProfile({ name: "Kkkkkkkkkkia", dob: "1990-07-15", method: "chaldean" }); // 10 × 2 + 1 + 1 = 22
     expect(p.expression.compound).toBe(22);
     expect(p.expression.value).toBe(4);
   });
@@ -85,8 +85,16 @@ describe("numerology: full profile", () => {
     const b = numerologyProfile({ name: "Priya Sharma", dob: "1995-03-08", targetYear: 2026 });
     expect(a).toEqual(b);
   });
-  it("rejects names without letters", () => {
+  it("rejects names without letters or without any vowel", () => {
     expect(() => numerologyProfile({ name: "123", dob: "1990-07-15" })).toThrow();
+    expect(() => numerologyProfile({ name: "Kkkk", dob: "1990-07-15" })).toThrow();
+  });
+  it("counts Y as a vowel only when the name has no other vowel", () => {
+    const lynn = numerologyProfile({ name: "Lynn", dob: "1990-07-15" }); // Y=7
+    expect(lynn.soulUrge.compound).toBe(7);
+    expect(lynn.conventions[1]).toMatch(/Y is counted as a vowel/);
+    const amy = numerologyProfile({ name: "Amy", dob: "1990-07-15" }); // A=1 only; Y consonant
+    expect(amy.soulUrge.compound).toBe(1);
   });
 });
 

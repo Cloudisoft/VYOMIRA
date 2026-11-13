@@ -5,6 +5,8 @@ import path from "node:path";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import type { ReportDoc } from "@/lib/readings/report";
+import { rs } from "@/lib/readings/strings";
+import type { RLang } from "@/lib/readings/lang";
 
 const FONT_DIR = path.join(process.cwd(), "assets/fonts");
 const read = (f: string) => fs.readFileSync(path.join(FONT_DIR, f));
@@ -12,7 +14,8 @@ const safe = (s: string) => s.replace(/→/g, "–").replace(/[“”]/g, '"').r
 const strip = (s: string) => s.replace(/\*\*(.+?)\*\*/g, "$1").replace(/(^|\s)_(.+?)_(?=\s|$|[.,])/g, "$1$2").replace(/^#{1,4}\s+/gm, "");
 
 /** PDF for any section-based reading (numerology / tarot / palmistry). English + Devanagari. */
-export async function renderReadingPdf(doc0: ReportDoc, opts: { preparedFor: string; date: Date; extra?: { heading: string; lines: string[] } }) {
+export async function renderReadingPdf(doc0: ReportDoc, opts: { preparedFor: string; date: Date; lang?: RLang; extra?: { heading: string; lines: string[] } }) {
+  const S = rs(opts.lang ?? "en");
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   doc.setTitle(`${doc0.title} — VYOMIRA`);
@@ -50,9 +53,9 @@ export async function renderReadingPdf(doc0: ReportDoc, opts: { preparedFor: str
 
   page.drawRectangle({ x: 0, y: H - 250, width: W, height: 250, color: navy });
   draw(page, "VYOMIRA", M, H - 80, 12, "bold", gold);
-  draw(page, "Your Universe. Your Story.", M, H - 97, 9, "sans", moon);
+  draw(page, S.tagline, M, H - 97, 9, "sans", moon);
   for (const [i, line] of wrap(doc0.title, "serif", 26, W - 2 * M).entries()) draw(page, line, M, H - 150 - i * 32, 26, "serif", moon);
-  draw(page, `${doc0.subtitle ? doc0.subtitle + " · " : ""}Prepared for ${opts.preparedFor} · ${opts.date.toISOString().slice(0, 10)}`, M, H - 220, 9.5, "sans", gold);
+  draw(page, `${doc0.subtitle ? doc0.subtitle + " · " : ""}${S.preparedFor}: ${opts.preparedFor} · ${opts.date.toISOString().slice(0, 10)}`, M, H - 220, 9.5, "sans", gold);
   y = H - 290;
 
   if (opts.extra) { heading(opts.extra.heading); for (const l of opts.extra.lines) para(l, { st: "bold", size: 11, gap: 2 }); y -= 6; }
@@ -66,9 +69,9 @@ export async function renderReadingPdf(doc0: ReportDoc, opts: { preparedFor: str
       y -= 4;
     }
   }
-  heading("Method");
+  heading(S.method);
   for (const m of doc0.method) para(m, { size: 9, color: slate });
-  heading("Please note");
+  heading(S.note);
   para(doc0.disclaimer, { size: 9, color: slate });
   return doc.save();
 }

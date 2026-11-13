@@ -4,6 +4,8 @@ import { getConfig } from "@/server/config";
 import { chargePrice, rupees, type ReadingCategory } from "@/lib/pricing";
 import { breadcrumbLd, faqLd, ldScript, abs, SITE } from "@/lib/seo";
 import { PathArt } from "./PathArt";
+import { HandMap } from "@/components/readings/HandMap";
+import { SAMPLE_HAND } from "@/lib/readings/palm-sample";
 
 export interface LandingCopy {
   category: Exclude<ReadingCategory, "bundle">;
@@ -52,6 +54,14 @@ export async function ServiceLanding({ c }: { c: LandingCopy }) {
             {c.steps.map(([t, d], i) => <li key={t} className="glass reveal-up rounded-[1.5rem] p-6" style={{ animationDelay: `${i * 80}ms` }}><span className="font-display text-3xl text-gold">0{i + 1}</span><p className="mt-3 font-display text-xl">{t}</p><p className="mt-2 text-sm text-slate">{d}</p></li>)}
           </ol>
         </section>
+
+        {c.category === "palmistry" && (
+          <section className="mt-24" aria-labelledby="map-h">
+            <h2 id="map-h" className="font-display text-4xl">Your palm, mapped</h2>
+            <p className="mt-3 max-w-2xl text-slate">Every reading comes with a hand map drawn from what we actually saw in your photo — clear lines solid, faint lines dashed, anything we couldn&apos;t see greyed out and left uninterpreted. Tap a line to read its observation. <span className="text-xs">(Sample shown.)</span></p>
+            <div className="glass mt-8 rounded-[1.5rem] p-6 sm:p-8"><HandMap hand={SAMPLE_HAND} dominant="right" lang="en" /></div>
+          </section>
+        )}
 
         {products.length > 0 && (
           <section className="mt-24" aria-labelledby="price-h">

@@ -175,3 +175,23 @@ export function resolvePicks(deck: { id: string; reversed: boolean }[], spread: 
   if (picks.some((p) => !Number.isInteger(p) || p < 0 || p >= Math.min(PICK_POOL, deck.length))) throw new Error("Invalid card choice");
   return picks.map((pi, i) => ({ position: pos[i].id, cardId: deck[pi].id, reversed: deck[pi].reversed, pickIndex: pi }));
 }
+
+// ── Localisation helpers (English data lives above; Hindi/Hinglish in tarot-i18n.ts) ──
+import { CARD_MEANING, POSITION, SPREAD_NAME, SUIT_NAME, SUIT_THEME, TOPIC_LABEL } from "./tarot-i18n";
+import type { RLang } from "./lang";
+
+export const cardMeaning = (id: string, reversed: boolean, lang: RLang = "en") => {
+  if (lang === "en") return reversed ? CARD[id].reversed : CARD[id].upright;
+  const m = CARD_MEANING[lang][id];
+  return reversed ? m[1] : m[0];
+};
+export const suitThemeL = (s: Suit, lang: RLang = "en") => (s === "major" ? "" : SUIT_THEME[lang][s]);
+export const suitNameL = (s: Suit, lang: RLang = "en") => (s === "major" ? "" : SUIT_NAME[lang][s]);
+export const spreadName = (id: SpreadId, lang: RLang = "en") => SPREAD_NAME[lang][id];
+export const topicLabel = (c: TarotCategory, lang: RLang = "en") => TOPIC_LABEL[lang][c];
+export function positionL(spread: SpreadId, pos: string, lang: RLang = "en") {
+  const p = SPREADS[spread].positions.find((x) => x.id === pos)!;
+  if (lang === "en") return { label: p.label, meaning: p.meaning };
+  const [label, meaning] = POSITION[lang][pos] ?? [p.label, p.meaning];
+  return { label, meaning };
+}

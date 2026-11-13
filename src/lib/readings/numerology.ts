@@ -6,7 +6,7 @@
  * - Pythagorean (default): A–I = 1–9, J–R = 1–9, S–Z = 1–8. Master numbers 11, 22, 33 are kept.
  * - Chaldean: traditional Chaldean table (no letter has 9). Name totals are shown as a compound
  *   number and reduced to a single digit; master numbers are not kept for name numbers.
- * - Vowels are A E I O U. Y is treated as a consonant.
+ * - Vowels are A E I O U. Y is a consonant — unless the name has no other vowel, then Y counts as a vowel.
  * - Life Path reduces month, day and year separately, then reduces their sum (masters kept).
  * - Personal Year = reduce(month) + reduce(day) + reduce(target year), reduced to 1–9.
  * - Lo Shu grid uses the non-zero digits of the full date of birth (DD MM YYYY).
@@ -115,7 +115,12 @@ export interface NumerologyProfile {
 
 export function numerologyProfile(input: { name: string; dob: string; method?: NumerologyMethod; targetYear?: number }): NumerologyProfile {
   const method = input.method ?? "pythagorean";
-  if (!normalizeName(input.name)) throw new Error("Name must contain letters");
+  const norm = normalizeName(input.name);
+  if (!norm) throw new Error("Name must contain letters");
+  const yVowel = !/[AEIOU]/.test(norm);
+  const isVowel = (c: string) => VOWELS.has(c) || (yVowel && c === "Y");
+  if (!norm.split("").some(isVowel)) throw new Error("Name must contain a vowel");
+  if (norm.split("").every(isVowel)) throw new Error("Name must contain a consonant");
   const d = parseDob(input.dob);
   const targetYear = input.targetYear ?? new Date().getUTCFullYear();
   return {
@@ -125,14 +130,14 @@ export function numerologyProfile(input: { name: string; dob: string; method?: N
     targetYear,
     lifePath: lifePath(d),
     expression: nameNumber(input.name, method, () => true),
-    soulUrge: nameNumber(input.name, method, (c) => VOWELS.has(c)),
-    personality: nameNumber(input.name, method, (c) => !VOWELS.has(c)),
+    soulUrge: nameNumber(input.name, method, isVowel),
+    personality: nameNumber(input.name, method, (c) => !isVowel(c)),
     birthday: birthdayNumber(d),
     personalYear: personalYear(d, targetYear),
     loShu: loShu(d),
     conventions: [
       method === "pythagorean" ? "Pythagorean letter values (A–I = 1–9, J–R = 1–9, S–Z = 1–8); master numbers 11, 22 and 33 are kept." : "Chaldean letter values (no letter carries 9); name totals are shown as compound numbers and reduced to one digit.",
-      "Vowels are A, E, I, O, U; Y is treated as a consonant.",
+      yVowel ? "Vowels are A, E, I, O, U; because your name has none of these, Y is counted as a vowel." : "Vowels are A, E, I, O, U; Y is treated as a consonant.",
       "Life Path reduces the month, day and year separately and then reduces their sum.",
       `Personal Year is calculated for ${targetYear}.`,
       "The Lo Shu grid uses the non-zero digits of your full date of birth.",
