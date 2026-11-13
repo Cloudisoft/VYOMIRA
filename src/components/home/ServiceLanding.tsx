@@ -31,7 +31,7 @@ export async function ServiceLanding({ c }: { c: LandingCopy }) {
     { "@context": "https://schema.org", "@type": "Service", name: `${c.eyebrow} reading — ${SITE.name}`, provider: { "@id": abs("/#organization") }, url: abs(path), areaServed: "IN", description: c.intro, offers: products.map((p) => ({ "@type": "Offer", name: p.name, price: String(chargePrice(p) / 100), priceCurrency: "INR" })) },
   ];
   return (
-    <div className="relative px-6 pt-32 pb-28">
+    <div className="relative px-6 pt-40 pb-28 sm:pt-44">
       <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(ellipse_55%_80%_at_50%_0%,rgba(114,86,216,.2),transparent)]" />
       <div className="mx-auto max-w-6xl">
         <nav aria-label="Breadcrumb" className="text-sm text-slate"><Link href="/" className="hover:text-moon">Home</Link> / <span>{c.eyebrow}</span></nav>

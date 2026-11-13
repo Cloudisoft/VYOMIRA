@@ -103,6 +103,7 @@ export function ReadingFlow({ initial, price, lang = "en" }: { initial: FlowData
 
   return (
     <div className="space-y-8">
+      {search.get("existing") && !msg && <p role="status" className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">{t.existing}</p>}
       {msg && <p role="status" className="rounded-xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm text-gold">{msg}</p>}
 
       {r.category === "palmistry" && ["AWAITING_PAYMENT", "PAID", "NEEDS_PHOTO", "FAILED"].includes(r.status) && (

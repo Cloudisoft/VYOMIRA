@@ -7,6 +7,7 @@ import { availableCredits, categoryOpen, products } from "@/server/readings/serv
 import { chargePrice, rupees } from "@/lib/pricing";
 import { productText, rui } from "@/lib/readings/ui-strings";
 import { toRLang } from "@/lib/readings/lang";
+import { hasConsent } from "@/server/consent";
 
 export const metadata = { title: "New reading" };
 
@@ -16,14 +17,14 @@ export default async function NewReading({ searchParams }: { searchParams: Promi
   const { category } = await searchParams;
   if (category !== "numerology" && category !== "tarot" && category !== "palmistry") redirect("/dashboard/readings");
   if (!(await categoryOpen(category, user.role === "ADMIN"))) redirect("/dashboard/readings?closed=" + category);
-  const [all, credits, ulang] = await Promise.all([products(), availableCredits(user.id), userLang(user.id)]);
+  const [all, credits, ulang, consent] = await Promise.all([products(), availableCredits(user.id), userLang(user.id), hasConsent(user.id, "ai_processing")]);
   const lang = toRLang(ulang);
   const list = all.filter((p) => p.active && p.category === category).map((p) => ({ id: p.id, tier: p.tier, ...productText(p, lang), price: rupees(chargePrice(p)), was: chargePrice(p) < p.priceMinor ? rupees(p.priceMinor) : null, credit: (credits[p.id] ?? 0) > 0 }));
   const [eyebrow, title, intro] = rui(lang).newCopy[category];
   return (
     <div className="space-y-6">
       <PageHeader eyebrow={eyebrow} title={title} intro={intro} />
-      <NewReadingForm category={category} products={list} defaultName={user.name} lang={lang} />
+      <NewReadingForm aiConsent={consent} category={category} products={list} defaultName={user.name} lang={lang} />
     </div>
   );
 }

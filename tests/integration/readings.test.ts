@@ -184,3 +184,33 @@ describe("AI output guards", () => {
     expect(numbersOutsideFacts("your Destiny number 7", allowed)).toEqual([7]);
   });
 });
+
+describe("never ask twice", () => {
+  it("re-entering the same numerology details reopens the existing reading (same or higher tier)", async () => {
+    const u = await mkUser();
+    const a = await createReading(u, "numerology_complete", { name: "Asha  verma", dob: "1992-04-18", method: "pythagorean" }, "en");
+    if ("error" in a) throw new Error(a.error);
+    // unpaid draft is reused, not duplicated
+    const again = await createReading(u, "numerology_complete", { name: "asha verma", dob: "1992-04-18", method: "pythagorean" }, "en");
+    expect("reading" in again && again.reading?.id).toBe(a.reading.id);
+    await db.serviceReading.update({ where: { id: a.reading.id }, data: { status: "READY" } });
+    // a lower tier for the same person opens the complete reading they already own
+    const lower = await createReading(u, "numerology_basic", { name: "Asha Verma", dob: "1992-04-18", method: "pythagorean" }, "en");
+    expect("reading" in lower && lower.reading?.id).toBe(a.reading.id);
+    expect("existing" in lower && lower.existing).toBe(true);
+    // different method or date → a genuinely new reading
+    const other = await createReading(u, "numerology_basic", { name: "Asha Verma", dob: "1992-04-18", method: "chaldean" }, "en");
+    expect("reading" in other && other.reading?.id).not.toBe(a.reading.id);
+    expect(await db.serviceReading.count({ where: { userId: u.id } })).toBe(2);
+  });
+  it("a paid tarot reading is never reused, but an unpaid tarot draft is", async () => {
+    const u = await mkUser();
+    const a = await createReading(u, "tarot_single", { category: "love", question: "Will we reconnect?" }, "en");
+    if ("error" in a) throw new Error(a.error);
+    const b = await createReading(u, "tarot_single", { category: "love", question: "Will we reconnect?" }, "en");
+    expect("reading" in b && b.reading?.id).toBe(a.reading.id);
+    await db.serviceReading.update({ where: { id: a.reading.id }, data: { status: "READY" } });
+    const c = await createReading(u, "tarot_single", { category: "love", question: "Will we reconnect?" }, "en");
+    expect("reading" in c && c.reading?.id).not.toBe(a.reading.id);
+  });
+});

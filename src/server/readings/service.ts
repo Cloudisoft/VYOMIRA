@@ -58,6 +58,8 @@ export async function createReading(user: { id: string; role: string }, productI
       if (d.year < 1900 || new Date(Date.UTC(d.year, d.month - 1, d.day)) > new Date()) throw new Error();
     } catch { return { error: "Please enter a valid date of birth.", status: 422 } as const; }
   }
+  const existing = await findExisting(user.id, product, parsed.data as ReadingInput);
+  if (existing) return { reading: existing, existing: true } as const;
   const reading = await db.serviceReading.create({
     data: {
       userId: user.id,
@@ -155,4 +157,25 @@ export function titleL(r: { category: string; productId: string; tier: string; t
     try { const i = dj<TarotInput>(r.encryptedInput); return `${spreadName(r.tier as SpreadId, lang)} — ${topicLabel(i.category as TarotCategory, lang)}`; } catch { return r.title; }
   }
   return productText({ id: r.productId, name: r.title, description: "" }, lang).name;
+}
+
+const TIER_RANK: Record<string, number> = { basic: 1, detailed: 2, complete: 3 };
+const norm = (v: unknown) => JSON.stringify(v, Object.keys(v as object).sort()).toLowerCase().replace(/\s+/g, " ");
+
+/**
+ * Never make someone pay twice for what they already have:
+ * - Numerology: same name, date of birth and method → reopen the existing reading of the same or a
+ *   higher tier (paid or not yet paid).
+ * - Tarot and palmistry: each paid draw / photo set is a new reading, but an unpaid draft for the
+ *   same product and details is reopened instead of creating another.
+ */
+async function findExisting(userId: string, product: ReadingProduct, input: ReadingInput) {
+  const rows = await db.serviceReading.findMany({ where: { userId, category: product.category }, orderBy: { createdAt: "desc" }, take: 100 });
+  const want = norm(input);
+  const same = (r: (typeof rows)[number]) => { try { return norm(readInput(r)) === want; } catch { return false; } };
+  if (product.category === "numerology") {
+    const owned = rows.filter((r) => r.status !== "AWAITING_PAYMENT" && same(r) && (TIER_RANK[r.tier] ?? 0) >= (TIER_RANK[product.tier] ?? 0));
+    if (owned.length) return owned.sort((a, b) => (TIER_RANK[b.tier] ?? 0) - (TIER_RANK[a.tier] ?? 0))[0];
+  }
+  return rows.find((r) => r.status === "AWAITING_PAYMENT" && r.productId === product.id && same(r)) ?? null;
 }

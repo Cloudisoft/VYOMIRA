@@ -22,5 +22,5 @@ export const POST = authed("service-reading-create", async (req, { user }) => {
   const r = await createReading(user, p.data.productId, p.data.input, p.data.language);
   if ("error" in r) return err((r as { status: number }).status, r.error!, "issues" in r ? { issues: r.issues } : undefined);
   const credits = await availableCredits(user.id);
-  return json({ reading: publicReading(r.reading), hasCredit: (credits[r.reading.productId] ?? 0) > 0 }, 201);
+  return json({ reading: publicReading(r.reading), existing: "existing" in r && r.existing, hasCredit: (credits[r.reading.productId] ?? 0) > 0 }, "existing" in r && r.existing ? 200 : 201);
 }, { perIp: 30, perUser: 20, windowSeconds: 600 });

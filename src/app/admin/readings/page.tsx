@@ -2,6 +2,7 @@ import { db } from "@/server/db";
 import { getConfig } from "@/server/config";
 import { ReadingProductsEditor } from "@/components/admin/ReadingProductsEditor";
 import { AdminAction } from "@/components/admin/AdminAction";
+import { FlagToggles } from "@/components/admin/FlagToggles";
 import { rupees } from "@/lib/pricing";
 
 /** Readings operations. Never shows customer inputs, photos or report text — only metadata. */
@@ -25,7 +26,7 @@ export default async function AdminReadings() {
     <div className="space-y-10">
       <div>
         <h1 className="text-4xl">Readings</h1>
-        <p className="mt-2 text-sm text-slate">Numerology, tarot and palmistry. Categories open to users: numerology {flags.numerology ? "on" : "off"}, tarot {flags.tarot ? "on" : "off"}, palmistry {flags.palmistry ? "on" : "off (admins only)"} — toggle in Pricing &amp; flags. Customer inputs, photos and report text are never shown here.</p>
+        <p className="mt-2 text-sm text-slate">Numerology, tarot and palmistry. Categories open to users: numerology {flags.numerology ? "on" : "off"}, tarot {flags.tarot ? "on" : "off"}, palmistry {flags.palmistry ? "on" : "off (admins only)"} — use the switches below. Customer inputs, photos and report text are never shown here.</p>
       </div>
 
       <section className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm">
@@ -42,6 +43,8 @@ export default async function AdminReadings() {
         </div>
         <ul className="mt-3 text-sm text-slate">{revenue.map((r) => <li key={r.planId}>{r.planId}: {r._count._all} × → {rupees(r._sum.amountMinor ?? 0)}</li>)}</ul>
       </section>
+
+      <FlagToggles initial={flags} />
 
       <ReadingProductsEditor pricing={pricing} />
 
