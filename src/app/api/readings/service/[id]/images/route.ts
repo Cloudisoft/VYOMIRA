@@ -3,6 +3,7 @@ import { db } from "@/server/db";
 import { audit } from "@/server/audit";
 import { encryptJson } from "@/server/crypto";
 import { processPalmImage } from "@/server/readings/palm-image";
+import { palmPrecheck } from "@/server/readings/palm-precheck";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -18,7 +19,11 @@ export const POST = authed<Ctx>("palm-upload", async (req, { user, params }) => 
   if (!(file instanceof File) || !["left", "right"].includes(side)) return err(422, "Please choose a photo and which hand it shows.");
   const out = await processPalmImage(Buffer.from(await file.arrayBuffer()));
   if (!out.ok) return err(422, out.error);
-  const data = encryptJson(out.jpeg.toString("base64"));
+  const b64 = out.jpeg.toString("base64");
+  // Before payment: reject photos that clearly aren't a readable palm, with a reason in the user's language.
+  const pre = await palmPrecheck(user.id, id, b64, side, r.language);
+  if (pre && !pre.ok) return err(422, pre.problem || "We couldn't see your palm lines clearly. Please retake the photo in good light, palm flat and filling the frame.");
+  const data = encryptJson(b64);
   await db.palmImage.upsert({ where: { readingId_side: { readingId: id, side } }, create: { readingId: id, side, mime: "image/jpeg", width: out.width, height: out.height, data, quality: out.quality as never }, update: { mime: "image/jpeg", width: out.width, height: out.height, data, quality: out.quality as never, createdAt: new Date() } });
   await audit("palm.uploaded", { userId: user.id, target: id, meta: { side } });
   return json({ ok: true, side, width: out.width, height: out.height, quality: out.quality });

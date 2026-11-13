@@ -121,3 +121,10 @@ describe("palm observations", () => {
     expect(invisibleEverywhere([hand, { ...hand, side: "left", lines: hand.lines.map((l) => (l.line === "fate" ? { ...l, visibility: "faint" as const } : l)) }])).toEqual(["sun", "mercury"]);
   });
 });
+
+describe("meta commentary filter", () => {
+  it("removes sentences about the report itself", () => {
+    const d = dedupeReport({ title: "t", disclaimer: "d", method: [], sections: [{ id: "a", title: "A", body: "Your Life Path of 7 is the Seeker. Think of the sections that follow as different rooms in the same house. Read them in order, or jump ahead." }] });
+    expect(d.sections[0].body).toBe("Your Life Path of 7 is the Seeker.");
+  });
+});

@@ -78,7 +78,7 @@ const HI_MINOR: Record<string, Pair[]> = {
     ["आर्थिक या काम का नया अवसर, समृद्धि", "छूटा अवसर, कमज़ोर योजना"], ["प्राथमिकताओं का संतुलन, अनुकूलनशीलता", "ज़रूरत से ज़्यादा ज़िम्मेदारी, अव्यवस्था"], ["टीमवर्क, कौशल, सहयोग", "टीमवर्क की कमी, औसत काम"],
     ["बचत, सुरक्षा, नियंत्रण", "लालच, अत्यधिक रक्षा"], ["कठिनाई, असुरक्षा, अलग-थलग महसूस करना", "सुधार, सहायता का आना"], ["उदारता, लेना और देना", "क़र्ज़, शर्तों वाली मदद"],
     ["धैर्य, लंबी अवधि का निवेश", "अधीरता, कम लाभ"], ["कौशल निखारना, परिश्रम, कारीगरी", "पूर्णतावाद, ध्यान की कमी"], ["आत्मनिर्भरता, सुख-सुविधा, पुरस्कार", "काम में ज़रूरत से ज़्यादा डूबना, झटके"],
-    ["विरासत, पारिवारिक संपत्ति, लंबी सुरक्षा", "आर्थिक दबाव, स्थिरता का नुक़सान"], ["सीखना, महत्वाकांक्षा, व्यावहारिक अवसर", "प्रगति की कमी, टालमटोल"], ["कड़ी मेहनत, दिनचर्या, भरोसेमंदी", "ऊब, ठहराव"],
+    ["विरासत, पारिवारिक संपत्ति, लंबी सुरक्षा", "आर्थिक दबाव, स्थिरता का नुक़सान"], ["सीखना, महत्वाकांक्षा, व्यावहारिक अवसर", "रुकी हुई प्रगति, काम टालना"], ["कड़ी मेहनत, दिनचर्या, भरोसेमंदी", "ऊब, ठहराव"],
     ["व्यावहारिकता, पोषण, सुरक्षा", "काम और घर में असंतुलन"], ["समृद्धि, सुरक्षा, नेतृत्व", "लालच, ज़िद"],
   ],
 };
@@ -108,7 +108,7 @@ const HG_MINOR: Record<string, Pair[]> = {
     ["paise ya kaam ka naya mauka, samriddhi", "chhoota mauka, kamzor planning"], ["priorities ka balance, adaptability", "zyada commitments, disorganisation"], ["teamwork, skill, sahyog", "teamwork ki kami, average kaam"],
     ["bachat, suraksha, control", "laalach, zyada bachaav"], ["mushkil, insecurity, alag-thalag mehsoos karna", "sudhaar, madad aana"], ["udaarta, lena aur dena", "karz, shartein judi madad"],
     ["dhairya, long-term investment", "be-sabri, kam return"], ["skill nikhaarna, mehnat, kaarigari", "perfectionism, focus ki kami"], ["aatmnirbharta, aaraam, inaam", "kaam mein zyada doobna, jhatke"],
-    ["virasat, parivaar ki daulat, lambi suraksha", "paison ka dabaav, stability ka nuksaan"], ["seekhna, ambition, practical mauka", "pragati ki kami, taalmatol"], ["kadi mehnat, routine, bharosemandi", "boriyat, thehraav"],
+    ["virasat, parivaar ki daulat, lambi suraksha", "paison ka dabaav, stability ka nuksaan"], ["seekhna, ambition, practical mauka", "ruki hui pragati, kaam taalna"], ["kadi mehnat, routine, bharosemandi", "boriyat, thehraav"],
     ["practical soch, poshan, suraksha", "kaam aur ghar mein imbalance"], ["samriddhi, suraksha, leadership", "laalach, zidd"],
   ],
 };

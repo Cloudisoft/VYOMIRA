@@ -41,7 +41,7 @@ export function numerologyFacts(p: NumerologyProfile, lang: RLang = "en") {
     soulUrge: { value: p.soulUrge.value, compound: p.soulUrge.compound, keyword: meaning(p.soulUrge.value, lang).keyword },
     personality: { value: p.personality.value, compound: p.personality.compound, keyword: meaning(p.personality.value, lang).keyword },
     birthday: { day: p.birthday.day, value: p.birthday.value },
-    personalYear: { year: p.targetYear, value: p.personalYear, theme: PERSONAL_YEAR[lang][p.personalYear].join(": ") },
+    personalYear: { year: p.targetYear, value: p.personalYear, title: PERSONAL_YEAR[lang][p.personalYear][0], focus: PERSONAL_YEAR[lang][p.personalYear][1] },
     loShu: { missing: p.loShu.missing, repeated: p.loShu.repeated, completePlanes: p.loShu.completeArrows },
   };
 }

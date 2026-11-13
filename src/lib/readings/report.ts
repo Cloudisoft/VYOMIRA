@@ -63,6 +63,9 @@ const BOILERPLATE = [
   /^(in (summary|conclusion)|to (sum up|conclude)|overall,)/i,
 ];
 
+/** Sentences that talk about the report instead of the person. */
+const META = /(sections? (that )?follows?|the following sections|read them in order|rooms? in (the )?same house|this (report|reading) (is|was) (prepared|written|created)|in this (report|reading),? (we|you) will|आगे के खंड|ye sections|yeh sections)/i;
+
 const SENT = /[^.!?।]+[.!?।]+(?=\s|$)|[^.!?।]+$/g;
 export const sentences = (p: string) => (p.match(SENT) ?? [p]).map((x) => x.trim()).filter(Boolean);
 
@@ -93,6 +96,7 @@ export function dedupeReport(doc: ReportDoc, threshold = 0.6): ReportDoc {
         const keptSent: string[] = [];
         for (const st of sentences(p)) {
           if (words(st).length >= 6 && seenSent.some((q) => coverage(st, q) >= 0.8)) { removed.push({ section: sec.id, reason: "repeated sentence", text: st.slice(0, 120) }); continue; }
+          if (META.test(st)) { removed.push({ section: sec.id, reason: "talks about the report, not the person", text: st.slice(0, 120) }); continue; }
           keptSent.push(st);
           seenSent.push(st);
         }

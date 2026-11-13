@@ -24,6 +24,8 @@ const WRITER_RULES = `You write one section at a time of a personal reading for 
 - Each section has a SCOPE. Stay inside it. Do not re-introduce the person, the method or earlier sections; refer back briefly ("as your Life Path suggests") instead of restating.
 - No filler intros ("In this section…"), no "In conclusion" outside the summary, no disclaimers (the app adds one at the end), no headings unless asked.
 - Never repeat a sentence or phrase you have used in another section; each section must add something new.
+- Never comment on the report itself ("the sections that follow", "read them in order", "this report is prepared for…"). Never explain how numbers are calculated or how a method works — the method is listed at the end of the report. Just interpret.
+- Each section receives only the facts it may discuss. Do not mention anything that is not in that section's facts.
 - Warm, plain, specific language. Short paragraphs. Markdown bold allowed.
 - Never predict death, illness, accidents, pregnancy or financial results; no medical, legal or financial advice; no fear-based language; never sell remedies.
 - Present meanings as traditional interpretation ("traditionally", "often read as"), not certainty.`;
@@ -89,7 +91,7 @@ async function generateNumerology(r: { id: string; userId: string; tier: string;
   const res = await callJson<{ sections: { id: string; body: string }[] }>(r.userId, r.id, {
     model: ai.modelFast, tier: "fast", maxTokens: ai.maxOutputTokensReport, schema: SECTIONS_SCHEMA,
     system: WRITER_RULES,
-    user: `Write these sections in ${LANG_NAME[lang]} for ${profile.name.split(/\s+/)[0]}. Each 60–140 words (summary 40–80).\nSECTIONS:\n${JSON.stringify(specs.map(({ id, title, scope, dependsOn }) => ({ id, title, scope, dependsOn })))}\nFACTS (computed exactly, ${facts.method} method):\n${JSON.stringify(facts)}`,
+    user: `Write these sections in ${LANG_NAME[lang]} for ${profile.name.split(/\s+/)[0]} (numerology, ${facts.method} method). Each 60–130 words (summary 40–70). Use only the facts listed inside each section.\nSECTIONS:\n${JSON.stringify(specs.map(({ id, title, scope, requires }) => ({ id, title, scope, facts: Object.fromEntries(requires.filter((k) => k !== "method").map((k) => [k, (facts as Record<string, unknown>)[k]])) })))}`,
   });
   const allowed = allowedNumbers(facts);
   [profile.targetYear + 1, profile.targetYear + 2].forEach((y) => allowed.add(y));

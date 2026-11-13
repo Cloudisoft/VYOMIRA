@@ -1,5 +1,5 @@
 import { CARD, cardMeaning, positionL, spreadName, suitNameL, suitThemeL, topicLabel, type DrawnCard, type SpreadId, type Suit, type TarotCategory } from "./tarot";
-import { dedupeReport, type ReportDoc, type ReportSection } from "./report";
+import { dedupeReport, sharesPhrase, type ReportDoc, type ReportSection } from "./report";
 import { rs } from "./strings";
 import type { RLang } from "./lang";
 
@@ -8,18 +8,21 @@ const REV: Record<RLang, string> = { en: ", reversed", hi: " (उल्टा)",
 const FRAMES: Record<RLang, ((x: { name: string; label: string; pm: string; meaning: string }) => string)[]> = {
   en: [
     (x) => `**${x.name}** sits in the ${x.label} position (${x.pm}). Traditionally it points to ${x.meaning}.`,
-    (x) => `For ${x.label} — ${x.pm} — you drew **${x.name}**, a card associated with ${x.meaning}.`,
-    (x) => `${x.label}: **${x.name}**. Here it speaks of ${x.meaning}, in the context of ${x.pm}.`,
+    (x) => `You drew **${x.name}** for ${x.label} (${x.pm}); it is associated with ${x.meaning}.`,
+    (x) => `${x.label}: **${x.name}** (${x.pm}) — it speaks of ${x.meaning}.`,
+    (x) => `Traditional meaning — ${x.meaning}: that is what **${x.name}** brings to ${x.label} (${x.pm}).`,
   ],
   hi: [
-    (x) => `**${x.name}** ${x.label} स्थान पर है (${x.pm})। परंपरा में यह ${x.meaning} की ओर संकेत करता है।`,
-    (x) => `${x.label} के लिए — ${x.pm} — आपने **${x.name}** चुना, जो ${x.meaning} से जुड़ा कार्ड है।`,
-    (x) => `${x.label}: **${x.name}**। यहाँ यह ${x.pm} के संदर्भ में ${x.meaning} की बात करता है।`,
+    (x) => `**${x.name}** ${x.label} स्थान पर है (${x.pm})। परंपरा में इसका संकेत है: ${x.meaning}।`,
+    (x) => `आपने ${x.label} के लिए **${x.name}** चुना (${x.pm}); इससे जुड़े अर्थ हैं: ${x.meaning}।`,
+    (x) => `${x.label}: **${x.name}** (${x.pm}) — यह कार्ड बताता है: ${x.meaning}।`,
+    (x) => `पारंपरिक अर्थ — ${x.meaning}: यही **${x.name}** ${x.label} में लाता है (${x.pm})।`,
   ],
   hinglish: [
-    (x) => `**${x.name}** ${x.label} position par hai (${x.pm}). Parampara mein yeh ${x.meaning} ki taraf ishaara karta hai.`,
-    (x) => `${x.label} ke liye — ${x.pm} — aapne **${x.name}** chuna, jo ${x.meaning} se juda card hai.`,
-    (x) => `${x.label}: **${x.name}**. Yahan yeh ${x.pm} ke context mein ${x.meaning} ki baat karta hai.`,
+    (x) => `**${x.name}** ${x.label} position par hai (${x.pm}). Parampara mein iska sanket hai: ${x.meaning}.`,
+    (x) => `Aapne ${x.label} ke liye **${x.name}** chuna (${x.pm}); isse jude arth hain: ${x.meaning}.`,
+    (x) => `${x.label}: **${x.name}** (${x.pm}) — yeh card batata hai: ${x.meaning}.`,
+    (x) => `Paaramparik arth — ${x.meaning}: yahi **${x.name}** ${x.label} mein laata hai (${x.pm}).`,
   ],
 };
 
@@ -43,6 +46,7 @@ const SUIT_LEAN: Record<RLang, Record<string, string>> = {
 export function tarotRuleSections(cards: DrawnCard[], spread: SpreadId, input: { category: TarotCategory; question?: string }, lang: RLang = "en") {
   const out: Record<string, string> = {};
   const seenSuits = new Set<Suit>();
+  const written: string[] = [];
   let majorNoted = false;
   cards.forEach((c, i) => {
     const card = CARD[c.cardId];
@@ -50,7 +54,16 @@ export function tarotRuleSections(cards: DrawnCard[], spread: SpreadId, input: {
     let extra = "";
     if (card.suit === "major") { if (!majorNoted) { extra = MAJOR_NOTE[lang]; majorNoted = true; } }
     else if (!seenSuits.has(card.suit)) { extra = SUIT_NOTE[lang](suitNameL(card.suit, lang), suitThemeL(card.suit, lang)); seenSuits.add(card.suit); }
-    out[c.position] = FRAMES[lang][i % 3]({ name: `${card.name}${c.reversed ? REV[lang] : ""}`, label: p.label, pm: p.meaning, meaning: cardMeaning(c.cardId, c.reversed, lang) }) + extra;
+    const x = { name: `${card.name}${c.reversed ? REV[lang] : ""}`, label: p.label, pm: p.meaning, meaning: cardMeaning(c.cardId, c.reversed, lang) };
+    const frames = FRAMES[lang];
+    // Rotate sentence patterns, but never use one that would repeat an 8-word phrase already written.
+    let text = "";
+    for (let k = 0; k < frames.length; k++) {
+      const candidate = frames[(i + k) % frames.length](x) + extra;
+      if (!sharesPhrase(candidate, written) || k === frames.length - 1) { text = candidate; break; }
+    }
+    written.push(text);
+    out[c.position] = text;
   });
   const n = cards.length, q = input.question?.trim(), topic = topicLabel(input.category, lang), sp = spreadName(spread, lang);
   out.overview = {
